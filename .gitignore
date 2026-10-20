@@ -1,0 +1,27 @@
+# Dados (licença CC BY-NC-SA: não redistribuir; baixar com src/absa/data.py)
+data/raw/
+data/interim/
+data/llm_cache/
+# Os rótulos anotados à mão são produção nossa e entram no git
+!data/annotated/
+
+# Material local que não vai para o GitHub
+_local/
+
+# Modelos e checkpoints
+/models/
+/checkpoints/
+*.safetensors
+*.bin
+*.pt
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+.pytest_cache/
+.ipynb_checkpoints/
+
+# Sistema
+.DS_Store

@@ -37,15 +37,49 @@ Reproduzíveis com [`scripts/estatisticas_olist.py`](scripts/estatisticas_olist.
 ## Estrutura do repositório
 
 ```
-pre-projeto/
-  Pre_Projeto_PLN_Vitor_Neves_de_Lima.pdf   texto entregue
-  pre_projeto_pln.html                      fonte do PDF
-pesquisa/
-  estado_da_arte_absa_olist.md              levantamento de datasets, estado da arte,
-                                            pipeline, desafios e referências (ABNT)
-scripts/
-  estatisticas_olist.py                     reproduz as estatísticas citadas no texto
+src/absa/                     pacote Python usado pelos notebooks
+  config.py                   caminhos, taxonomia dos 5 aspectos, rótulos
+  data.py                     download da Olist e junção das tabelas
+  preprocess.py               limpeza leve (Transformers/LLM) e clássica (TF-IDF)
+  sampling.py                 sorteio do gabarito (800) e divisão validação/teste
+  heuristics.py               regras de rotulagem (baseline e sinal fraco)
+  llm_labeler.py              rotulagem por LLM: prompt few-shot, JSON, cache
+  metrics.py                  F1 por aspecto, F1 de tupla, bootstrap, McNemar, AUC de atraso
+  models/baseline.py          TF-IDF + Regressão Logística / Random Forest
+  models/encoder.py           BERTimbau / Albertina com uma cabeça por aspecto
+notebooks/                    roteiro de execução (Colab)
+  01_eda_e_juncao             exploração e números do pré-projeto
+  02_amostragem_gabarito      gera os arquivos para anotação manual
+  03_baseline_tfidf           regras e TF-IDF
+  04_rotulagem_llm            Qwen2.5-7B em 4 bits: concordância e rótulos fracos
+  05_encoders_...             ajuste fino de BERTimbau e Albertina
+anotacao/guia_de_anotacao.md  definição dos aspectos e casos difíceis
+data/annotated/               gabarito anotado à mão (versionado)
+tests/                        testes do pacote (pytest)
+pre-projeto/                  PDF entregue e fonte HTML
+pesquisa/                     levantamento do estado da arte
+scripts/                      estatísticas do pré-projeto
 ```
+
+## Como executar
+
+**No Colab:** abra um notebook pelo GitHub (Arquivo → Abrir notebook → GitHub → `vnevesl/pln-absa-olist`). A primeira célula clona o repositório, instala o pacote e liga o cache ao Google Drive.
+
+**Localmente:**
+
+```bash
+python -m venv .venv && source .venv/bin/activate
+pip install -e ".[dev]"
+pytest
+```
+
+## Ordem de trabalho
+
+1. `01` e `02`: explorar os dados e gerar `data/annotated/gabarito_para_anotar.csv`
+2. Anotar os 800 comentários seguindo o guia; um colega anota `segundo_anotador.csv`
+3. `04`: medir a concordância do LLM na validação e rotular ~12 mil comentários
+4. `03` e `05`: treinar e avaliar as linhas de base e os encoders
+5. Próximos: transferência RePro→Olist, validação com atraso, LIME, Fairlearn
 
 ## Principais referências
 
