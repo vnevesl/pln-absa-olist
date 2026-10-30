@@ -93,7 +93,7 @@ def label_texts(texts, generate, examples=None, cache_name="llm", batch_size=8, 
     pendentes = [p for p in dict.fromkeys(prompts) if cache.get(_key(p)) is None]
     for i in range(0, len(pendentes), batch_size):
         lote = pendentes[i:i + batch_size]
-        for prompt, raw in zip(lote, generate(lote)):
+        for prompt, raw in zip(lote, generate(lote), strict=True):
             cache.put(_key(prompt), raw)
         if progress:
             print(f"\r{min(i + batch_size, len(pendentes))}/{len(pendentes)} rotulados", end="")

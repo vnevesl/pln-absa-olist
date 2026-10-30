@@ -69,7 +69,8 @@ def convert(raw: pd.DataFrame) -> pd.DataFrame:
 
     pol_unica = polaridades.map(lambda p: p[0] if len(p) == 1 else None)
     for topico, asp in TOPIC2ASPECT.items():
-        df[f"asp_{asp}"] = [pol if marcado else "ausente" for marcado, pol in zip(raw[topico].astype(bool), pol_unica)]
+        marcados = raw[topico].astype(bool)
+        df[f"asp_{asp}"] = [pol if m else "ausente" for m, pol in zip(marcados, pol_unica, strict=True)]
     return df
 
 

@@ -29,7 +29,7 @@ STOPWORDS = {
     "pra", "com", "e", "ou", "que", "se", "ao", "aos", "me", "te", "lhe", "eu", "ele",
     "ela", "eles", "elas", "voce", "voces", "meu", "minha", "meus", "minhas", "seu",
     "sua", "seus", "suas", "isso", "isto", "esse", "essa", "este", "esta", "aquele",
-    "aquela", "foi", "ser", "sao", "era", "esta", "estao", "estava", "tem", "ter",
+    "aquela", "foi", "ser", "sao", "era", "estao", "estava", "tem", "ter",
     "tinha", "ja", "mais", "muito", "tambem", "so", "como", "mas", "quando", "ate",
 } - NEGATIONS
 

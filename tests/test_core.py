@@ -4,7 +4,7 @@ import pandas as pd
 from absa.config import ASPECTS, LABEL_COLUMNS
 from absa.heuristics import heuristic_labels
 from absa.llm_labeler import build_prompt, parse_response
-from absa.metrics import mcnemar, macro_f1, per_aspect_report, tuple_f1
+from absa.metrics import macro_f1, mcnemar, per_aspect_report, tuple_f1
 from absa.models.baseline import TfidfAspectClassifier
 from absa.preprocess import clean_classic, clean_light
 
@@ -23,7 +23,8 @@ def test_clean_classic_keeps_negation():
 
 
 def test_parse_response_normalizes_and_rejects():
-    raw = 'Claro: {"produto": "Positiva", "entrega": "negativo", "recebimento": "ausente", "anuncio": "ausente", "outros": "neutro"}'
+    raw = ('Claro: {"produto": "Positiva", "entrega": "negativo", "recebimento": "ausente", '
+           '"anuncio": "ausente", "outros": "neutro"}')
     assert parse_response(raw) == {"produto": "positivo", "entrega": "negativo", "recebimento": "ausente",
                                    "anuncio": "ausente", "outros": "neutro"}
     assert parse_response('{"produto": "talvez"}') is None

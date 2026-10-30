@@ -14,7 +14,7 @@ from .config import ASPECTS, LABEL_COLUMNS, SEED
 def per_aspect_report(y_true: pd.DataFrame, y_pred: pd.DataFrame) -> pd.DataFrame:
     """F1 macro (4 classes), F1 de detecção (mencionado ou não) e suporte por aspecto."""
     rows = []
-    for asp, col in zip(ASPECTS, LABEL_COLUMNS):
+    for asp, col in zip(ASPECTS, LABEL_COLUMNS, strict=True):
         t, p = y_true[col].to_numpy(), y_pred[col].to_numpy()
         rows.append({
             "aspecto": asp,

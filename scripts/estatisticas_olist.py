@@ -25,14 +25,16 @@ dist = com_texto.review_score.value_counts(normalize=True).sort_index() * 100
 print("Notas (com comentário, %):", dist.round(1).to_dict())
 
 palavras = com_texto.review_comment_message.str.split().str.len()
-print(f"Palavras por comentário: média {palavras.mean():.1f}, mediana {palavras.median():.0f}, p95 {palavras.quantile(.95):.0f}")
+print(f"Palavras por comentário: média {palavras.mean():.1f}, mediana {palavras.median():.0f}, "
+      f"p95 {palavras.quantile(.95):.0f}")
 
 # Atraso em dias = entrega real - data estimada (somente pedidos entregues).
 # A data estimada vem sem horário (00:00), então só conta como atrasado o pedido
 # entregue a partir do dia seguinte ao prometido; entregas no próprio dia são pontuais.
 m = com_texto.merge(orders, on="order_id")
 m = m[m.order_delivered_customer_date.notna()]
-atraso_dias = (pd.to_datetime(m.order_delivered_customer_date) - pd.to_datetime(m.order_estimated_delivery_date)).dt.days
+entrega, prometido = pd.to_datetime(m.order_delivered_customer_date), pd.to_datetime(m.order_estimated_delivery_date)
+atraso_dias = (entrega - prometido).dt.days
 atrasado = atraso_dias > 0
 print("Comentários de pedidos entregues:", len(m), f"| atrasados: {atrasado.sum()} ({100 * atrasado.mean():.1f}%)")
 print(f"Nota <= 2: {100 * (m[atrasado].review_score <= 2).mean():.1f}% nos atrasados vs "

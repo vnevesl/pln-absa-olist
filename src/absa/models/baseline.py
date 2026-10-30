@@ -29,7 +29,7 @@ class TfidfAspectClassifier:
 
     def fit(self, texts, labels: pd.DataFrame):
         X = self.vectorizer.fit_transform(texts)
-        for asp, col in zip(ASPECTS, LABEL_COLUMNS):
+        for asp, col in zip(ASPECTS, LABEL_COLUMNS, strict=True):
             y = labels[col].to_numpy()
             if len(set(y)) == 1:  # aspecto sem variação no treino: prevê a constante
                 self.models[asp] = y[0]

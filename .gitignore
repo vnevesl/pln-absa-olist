@@ -25,3 +25,7 @@ __pycache__/
 
 # Sistema
 .DS_Store
+
+# Ralph
+.ralph/
+scripts/ralph/node_modules/

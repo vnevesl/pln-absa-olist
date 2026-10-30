@@ -56,7 +56,10 @@ class MultiAspectModel(nn.Module):
 class _TextDataset(Dataset):
     def __init__(self, texts, labels=None):
         self.texts = list(texts)
-        self.labels = None if labels is None else labels[LABEL_COLUMNS].apply(lambda s: s.map(POL2ID)).to_numpy(dtype=np.int64)
+        if labels is None:
+            self.labels = None
+        else:
+            self.labels = labels[LABEL_COLUMNS].apply(lambda s: s.map(POL2ID)).to_numpy(dtype=np.int64)
 
     def __len__(self):
         return len(self.texts)

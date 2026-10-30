@@ -1,0 +1,13 @@
+# Ralph Progress — noite 1
+
+## Estado atual
+Fila prd.noite1.json pronta; nenhuma história iniciada.
+Próximo passo: E1-S1 (métricas).
+
+## Codebase Patterns
+- Pacote em src/absa; testes em tests/ (pytest com pythonpath=src); lint com ruff (config no pyproject).
+- Rótulos: DataFrame com colunas asp_<aspecto> (config.LABEL_COLUMNS), valores em config.POLARITIES.
+- Gabarito humano = RePro (src/absa/repro.py: load_repro → treino/val/teste/descartados).
+- Notebooks são gerados com a 1ª célula de setup do Colab (clona o repo, liga Drive); manter essa célula.
+
+## Log
