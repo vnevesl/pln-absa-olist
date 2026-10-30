@@ -1,6 +1,6 @@
 # Do que o cliente reclama? ABSA em avaliações de e-commerce
 
-Pré-projeto da disciplina de **Processamento de Linguagem Natural (2026/2)**, Trabalho Prático Final, Etapa 1.
+Trabalho Prático Final da disciplina de **Processamento de Linguagem Natural (2026/2)**. O pré-projeto (Etapa 1) está em [`pre-projeto/`](pre-projeto/).
 
 **Autor:** Vitor Neves de Lima
 
@@ -15,15 +15,27 @@ Quando um cliente dá uma nota baixa numa compra online, a loja sabe que ele fic
 
 | Item | Escolha |
 |---|---|
-| Dados | [Brazilian E-Commerce Public Dataset by Olist](https://www.kaggle.com/datasets/olistbr/brazilian-ecommerce) (CC BY-NC-SA 4.0) + [RePro](https://aclanthology.org/2024.propor-1.44/) (PROPOR 2024) |
-| Paradigma | Aprendizado supervisionado, com supervisão fraca |
-| Tarefa | Classificação multirrótulo por categoria de aspecto (ACSA): 5 aspectos × {positivo, negativo, neutro, não mencionado} |
-| Rótulos | 800 comentários anotados à mão (kappa em 200) + ~12 mil rotulados por LLM aberto (Qwen2.5-7B, 4 bits) |
-| Modelos | TF-IDF + Regressão Logística/Random Forest → BERTimbau Base → Albertina PT-BR → transferência RePro→Olist → LLM few-shot como teto |
-| Avaliação | F1 macro por aspecto, bootstrap, McNemar, custo de inferência |
-| Diferencial | Validação extrínseca: "entrega negativa" prevista × atraso real registrado nos pedidos |
-| IA responsável | LIME (explicabilidade), Fairlearn (desempenho por região e categoria), *confident learning* (ruído nota×texto) |
-| Ambiente | Google Colab gratuito (T4), 3 meses |
+| Gabarito humano | [RePro](https://aclanthology.org/2024.propor-1.44/) (PROPOR 2024): avaliações da Americanas/B2W anotadas por humanos. 7.985 usáveis → treino 5.589 · validação 799 · **teste 1.597** |
+| Domínio de aplicação | [Brazilian E-Commerce Public Dataset by Olist](https://www.kaggle.com/datasets/olistbr/brazilian-ecommerce) (CC BY-NC-SA 4.0): 40.641 comentários com datas de entrega |
+| Paradigma | Aprendizado supervisionado (rótulos humanos) comparado a supervisão fraca (rótulos de LLM) |
+| Tarefa | Classificação multirrótulo por categoria de aspecto (ACSA): 5 aspectos × {ausente, positivo, negativo, neutro} |
+| Modelos | Regras → TF-IDF + Regressão Logística/Random Forest → BERTimbau → Albertina PT-BR → LLM few-shot (Qwen2.5-7B, 4 bits) |
+| Pergunta central | Treinar com rótulos de LLM, nos mesmos textos, chega perto de treinar com rótulos humanos? |
+| Avaliação | F1 macro por aspecto e F1 de tupla com IC por bootstrap, bootstrap pareado e McNemar, sempre no teste humano |
+| Validação extrínseca | Na Olist: "entrega negativa" prevista × atraso real registrado nos pedidos |
+| IA responsável | LIME (explicabilidade) e Fairlearn (gênero, região e idade no RePro; região na Olist) |
+| Ambiente | Google Colab gratuito (T4) |
+
+> **Mudança em relação ao pré-projeto:** a anotação própria de 800 comentários foi substituída pelo gabarito humano publicado do RePro (mais escala e comparabilidade com a literatura), e o aspecto "atendimento" virou "outros" para seguir a taxonomia do RePro. Uma amostra opcional de 100 comentários da Olist, anotada à mão, mede a mudança de domínio.
+
+### Resultados até agora (teste humano do RePro, n = 1.597)
+
+| Modelo | F1 macro (IC95%) | F1 tupla |
+|---|---|---|
+| Regras (palavras-chave) | 0,442 (0,432–0,453) | 0,586 |
+| TF-IDF + Random Forest | 0,612 (0,585–0,639) | 0,787 |
+| TF-IDF + Regressão Logística | 0,759 (0,730–0,783) | 0,835 |
+| BERTimbau, Albertina, LLM | *a rodar no Colab (notebooks 04 e 05)* | |
 
 ### Números verificados nos dados
 
@@ -39,22 +51,26 @@ Reproduzíveis com [`scripts/estatisticas_olist.py`](scripts/estatisticas_olist.
 ```
 src/absa/                     pacote Python usado pelos notebooks
   config.py                   caminhos, taxonomia dos 5 aspectos, rótulos
+  repro.py                    gabarito humano: download, conversão e divisão do RePro
   data.py                     download da Olist e junção das tabelas
   preprocess.py               limpeza leve (Transformers/LLM) e clássica (TF-IDF)
-  sampling.py                 sorteio do gabarito (800) e divisão validação/teste
-  heuristics.py               regras de rotulagem (baseline e sinal fraco)
+  heuristics.py               regras por palavra-chave (linha de base)
   llm_labeler.py              rotulagem por LLM: prompt few-shot, JSON, cache
-  metrics.py                  F1 por aspecto, F1 de tupla, bootstrap, McNemar, AUC de atraso
+  metrics.py                  F1 por aspecto e de tupla, bootstrap, McNemar, AUC de atraso
+  sampling.py                 amostra opcional da Olist para anotação
   models/baseline.py          TF-IDF + Regressão Logística / Random Forest
   models/encoder.py           BERTimbau / Albertina com uma cabeça por aspecto
 notebooks/                    roteiro de execução (Colab)
-  01_eda_e_juncao             exploração e números do pré-projeto
-  02_amostragem_gabarito      gera os arquivos para anotação manual
-  03_baseline_tfidf           regras e TF-IDF
-  04_rotulagem_llm            Qwen2.5-7B em 4 bits: concordância e rótulos fracos
-  05_encoders_...             ajuste fino de BERTimbau e Albertina
-anotacao/guia_de_anotacao.md  definição dos aspectos e casos difíceis
-data/annotated/               gabarito anotado à mão (versionado)
+  01_eda_olist                exploração da Olist e números do pré-projeto
+  02_gabarito_repro           conversão do RePro e distribuição dos rótulos
+  03_baselines                regras e TF-IDF (CPU)
+  04_rotulagem_llm            Qwen2.5-7B: concordância com humanos e rótulos fracos (GPU)
+  05_encoders                 BERTimbau e Albertina com rótulos humanos × LLM (GPU)
+  06_comparacao               tabela final, IC, bootstrap pareado, McNemar
+  07_validacao_olist          aplicação na Olist e validação com o atraso real (GPU)
+  08_xai_fairness             LIME e Fairlearn (GPU)
+anotacao/guia_de_anotacao.md  definição dos aspectos e conversão do RePro
+data/annotated/               amostra opcional da Olist para anotação manual
 tests/                        testes do pacote (pytest)
 pre-projeto/                  PDF entregue e fonte HTML
 pesquisa/                     levantamento do estado da arte
@@ -63,23 +79,15 @@ scripts/                      estatísticas do pré-projeto
 
 ## Como executar
 
-**No Colab:** abra um notebook pelo GitHub (Arquivo → Abrir notebook → GitHub → `vnevesl/pln-absa-olist`). A primeira célula clona o repositório, instala o pacote e liga o cache ao Google Drive.
+**No Colab:** abra um notebook pelo GitHub (Arquivo → Abrir notebook → GitHub → `vnevesl/pln-absa-olist`). A primeira célula clona o repositório, instala o pacote e liga cache, modelos e predições ao Google Drive. Rode na ordem: 02 → 03 → 04 → 05 → 06 → 07 → 08.
 
-**Localmente:**
+**Localmente** (só os notebooks sem GPU: 01, 02, 03 e 06):
 
 ```bash
 python -m venv .venv && source .venv/bin/activate
 pip install -e ".[dev]"
 pytest
 ```
-
-## Ordem de trabalho
-
-1. `01` e `02`: explorar os dados e gerar `data/annotated/gabarito_para_anotar.csv`
-2. Anotar os 800 comentários seguindo o guia; um colega anota `segundo_anotador.csv`
-3. `04`: medir a concordância do LLM na validação e rotular ~12 mil comentários
-4. `03` e `05`: treinar e avaliar as linhas de base e os encoders
-5. Próximos: transferência RePro→Olist, validação com atraso, LIME, Fairlearn
 
 ## Principais referências
 
@@ -93,4 +101,4 @@ A lista completa está no PDF e em [`pesquisa/estado_da_arte_absa_olist.md`](pes
 
 ## Licença dos dados
 
-Os dados da Olist e da B2W/RePro estão sob licenças **não comerciais** (CC BY-NC-SA 4.0) e não são redistribuídos aqui; o script baixa os arquivos diretamente da fonte pública.
+Os dados da Olist (CC BY-NC-SA 4.0) e do RePro não são redistribuídos aqui; o código baixa os arquivos das fontes públicas. A exceção são os 100 comentários da Olist em `data/annotated/`, mantidos sob a mesma licença não comercial.

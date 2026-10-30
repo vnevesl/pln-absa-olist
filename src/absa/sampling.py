@@ -1,18 +1,18 @@
-"""Seleção do conjunto de referência (gabarito) para anotação manual.
+"""Amostra opcional da Olist para anotação manual (teste de mudança de domínio).
 
-Estratifica por nota e por situação de entrega para não deixar as classes
-raras de fora: comentários de 2 e 3 estrelas e de pedidos atrasados são
-sobre-representados em relação à base.
+O gabarito principal é o RePro (ver repro.py). Estes 100 comentários da Olist
+servem para medir se um modelo avaliado na Americanas/B2W funciona na Olist e
+para cobrir avaliações de polaridade mista ("bom, mas atrasou"), que o RePro
+não permite usar. A amostra é estratificada por nota e sobre-representa
+pedidos atrasados.
 """
 import numpy as np
 import pandas as pd
-from sklearn.model_selection import train_test_split
 
 from .config import ANNOTATED, LABEL_COLUMNS, POLARITIES, SEED
 
-# Quantos comentários sortear por nota (total 800)
-QUOTA_POR_NOTA = {1: 200, 2: 130, 3: 150, 4: 140, 5: 180}
-FRACAO_ATRASADOS = 0.30  # dentro de cada nota, ao menos 30% de pedidos atrasados
+QUOTA_POR_NOTA = {1: 25, 2: 15, 3: 20, 4: 15, 5: 25}  # total 100
+FRACAO_ATRASADOS = 0.30
 
 
 def sample_gold(df: pd.DataFrame, quota=QUOTA_POR_NOTA, frac_late=FRACAO_ATRASADOS,
@@ -31,8 +31,8 @@ def sample_gold(df: pd.DataFrame, quota=QUOTA_POR_NOTA, frac_late=FRACAO_ATRASAD
     return gold
 
 
-def load_gold(arquivo="gabarito_anotado.csv"):
-    """Gabarito anotado + metadados (nota, atraso, UF, categoria) e divisão validação/teste.
+def load_olist_gold(arquivo="olist_anotado.csv") -> pd.DataFrame:
+    """Anotação manual da Olist + metadados (nota, atraso, UF, categoria).
 
     Falha se houver célula de aspecto vazia ou com valor fora de POLARITIES.
     """
@@ -42,17 +42,5 @@ def load_gold(arquivo="gabarito_anotado.csv"):
         invalidos = anot.loc[~anot[col].isin(POLARITIES), ["ordem_anotacao", col]]
         if len(invalidos):
             raise ValueError(f"{col}: {len(invalidos)} valores inválidos, ex.:\n{invalidos.head()}")
-    meta = pd.read_csv(ANNOTATED / "gabarito_metadados.csv").drop(columns=["texto", "ordem_anotacao"])
-    gold = anot.merge(meta, on="review_id", how="left", validate="one_to_one")
-    return split_gold(gold)
-
-
-def split_gold(gold: pd.DataFrame, n_dev=300, seed=SEED):
-    """Divide em validação (ajuste de prompts e limiares) e teste (congelado)."""
-    dev, test = train_test_split(gold, train_size=n_dev, stratify=gold.nota, random_state=seed)
-    return dev.reset_index(drop=True), test.reset_index(drop=True)
-
-
-def double_annotation_subset(gold: pd.DataFrame, n=200, seed=SEED) -> pd.DataFrame:
-    """Subamostra para o segundo anotador (cálculo do kappa de Cohen)."""
-    return gold.sample(n, random_state=seed).sort_values("ordem_anotacao")
+    meta = pd.read_csv(ANNOTATED / "olist_metadados.csv").drop(columns=["texto", "ordem_anotacao"])
+    return anot.merge(meta, on="review_id", how="left", validate="one_to_one")

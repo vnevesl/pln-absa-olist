@@ -32,3 +32,5 @@ where = ["src"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+# Garante o import local mesmo se o macOS ocultar o .pth da instalação editável
+pythonpath = ["src"]

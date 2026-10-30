@@ -23,9 +23,9 @@ def test_clean_classic_keeps_negation():
 
 
 def test_parse_response_normalizes_and_rejects():
-    raw = 'Claro: {"produto": "Positiva", "entrega": "negativo", "recebimento": "ausente", "anuncio": "ausente", "atendimento": "neutro"}'
+    raw = 'Claro: {"produto": "Positiva", "entrega": "negativo", "recebimento": "ausente", "anuncio": "ausente", "outros": "neutro"}'
     assert parse_response(raw) == {"produto": "positivo", "entrega": "negativo", "recebimento": "ausente",
-                                   "anuncio": "ausente", "atendimento": "neutro"}
+                                   "anuncio": "ausente", "outros": "neutro"}
     assert parse_response('{"produto": "talvez"}') is None
     assert parse_response("sem json") is None
 
@@ -70,3 +70,22 @@ def test_baseline_learns_toy_data():
     proba = clf.predict_proba(textos)
     assert proba.shape == (40, len(ASPECTS), 4) and np.allclose(proba.sum(axis=2), 1)
     assert list(pred.columns) == LABEL_COLUMNS
+
+
+def test_repro_conversion_rules():
+    from absa.repro import convert
+    raw = pd.DataFrame({
+        "review_title": ["", "", "", ""],
+        "review_text": ["Chegou rápido, produto ótimo", "Bom mas demorou", "Produto ruim e caro", "Normal"],
+        "overall_rating": [5, 3, 1, 3],
+        "site_category_lv1": ["x"] * 4, "reviewer_state": ["SP"] * 4,
+        "reviewer_gender": ["F"] * 4, "reviewer_birth_year": [1990] * 4,
+        "polarity": ["['POSITIVO']", "['NEGATIVO', 'POSITIVO']", "['NEGATIVO']", "['NEGATIVO', 'POSITIVO']"],
+        "ENTREGA": [1, 1, 0, 0], "PRODUTO": [1, 1, 1, 1], "CONDICOESDERECEBIMENTO": [0] * 4,
+        "ANUNCIO": [0] * 4, "OUTROS": [0, 0, 1, 0], "INADEQUADA": [0] * 4,
+    })
+    df = convert(raw)
+    assert df.loc[0, "asp_entrega"] == "positivo" and df.loc[0, "asp_produto"] == "positivo"
+    assert df.loc[1, "motivo_descarte"] == "polaridade mista, vários tópicos"
+    assert df.loc[2, "asp_outros"] == "negativo" and df.loc[2, "asp_anuncio"] == "ausente"
+    assert df.loc[3, "motivo_descarte"] == "polaridade mista, um tópico"
