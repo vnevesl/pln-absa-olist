@@ -115,7 +115,7 @@ obrigatórias antes do commit.
 - **Só roda 🤖.** Histórias 🖥️ e 👤 ficam fora da fila; o Ralph deixa notebooks prontos para você só
   apertar "Executar tudo".
 - **Container obrigatório** (Docker já instalado), com `claude` autenticado dentro dele. Sem push, sem
-  chaves, sem chamadas pagas.
+  chaves, sem chamadas pagas. Passo a passo em [`scripts/ralph/README.md`](../scripts/ralph/README.md).
 - **Restrição do hardware:** M3 com 8 GB de RAM. Não cabe LLM de 7–14B nem o treino com várias sementes. O
   Ralph treina no máximo modelos minúsculos de teste.
 
