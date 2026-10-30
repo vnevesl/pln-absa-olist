@@ -29,3 +29,6 @@ __pycache__/
 # Ralph
 .ralph/
 scripts/ralph/node_modules/
+
+# Pacote gerado para o Overleaf
+artigo/artigo_overleaf.zip
