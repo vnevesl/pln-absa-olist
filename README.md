@@ -19,7 +19,7 @@ Quando um cliente dá uma nota baixa numa compra online, a loja sabe que ele fic
 | Domínio de aplicação | [Brazilian E-Commerce Public Dataset by Olist](https://www.kaggle.com/datasets/olistbr/brazilian-ecommerce) (CC BY-NC-SA 4.0): 40.641 comentários com datas de entrega |
 | Paradigma | Aprendizado supervisionado (rótulos humanos) comparado a supervisão fraca (rótulos de LLM) |
 | Tarefa | Classificação multirrótulo por categoria de aspecto (ACSA): 5 aspectos × {ausente, positivo, negativo, neutro} |
-| Modelos | Regras → TF-IDF + Regressão Logística/Random Forest → BERTimbau → Albertina PT-BR → LLM few-shot (Qwen2.5-7B, 4 bits) |
+| Modelos | Regras → TF-IDF + Regressão Logística/Random Forest → BERTimbau; rótulos do Qwen2.5-7B (4 bits) para a comparação humano × LLM |
 | Pergunta central | Treinar com rótulos de LLM, nos mesmos textos, chega perto de treinar com rótulos humanos? |
 | Avaliação | F1 macro por aspecto e F1 de tupla com IC por bootstrap, bootstrap pareado e McNemar, sempre no teste humano |
 | Validação extrínseca | Na Olist: "entrega negativa" prevista × atraso real registrado nos pedidos |
