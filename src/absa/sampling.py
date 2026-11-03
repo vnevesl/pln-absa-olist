@@ -44,3 +44,27 @@ def load_olist_gold(arquivo="olist_anotado.csv") -> pd.DataFrame:
             raise ValueError(f"{col}: {len(invalidos)} valores inválidos, ex.:\n{invalidos.head()}")
     meta = pd.read_csv(ANNOTATED / "olist_metadados.csv").drop(columns=["texto", "ordem_anotacao"])
     return anot.merge(meta, on="review_id", how="left", validate="one_to_one")
+
+
+def gold_exclusion(df: pd.DataFrame) -> pd.Series:
+    """True nas linhas que estão (por review_id OU texto) na amostra da Olist reservada para anotação.
+
+    Essas linhas nunca podem entrar em treino nem em rotulagem por LLM (vazamento).
+    """
+    ids, textos = set(), set()
+    for nome in ["olist_para_anotar.csv", "olist_anotado.csv"]:
+        caminho = ANNOTATED / nome
+        if caminho.exists():
+            g = pd.read_csv(caminho, keep_default_na=False)
+            ids |= set(g.review_id)
+            textos |= set(g.texto.str.strip())
+    return df.review_id.isin(ids) | df.texto.str.strip().isin(textos)
+
+
+def olist_split(df: pd.DataFrame, seed=SEED) -> pd.Series:
+    """Divide a Olist em "dev" (escolhas de modelo, rotulagem) e "relato" (números do artigo), por pedido.
+
+    Determinístico e independente da ordem das linhas: usa o hash de order_id + semente.
+    """
+    h = pd.util.hash_pandas_object(df.order_id.astype(str) + f"|{seed}", index=False).to_numpy()
+    return pd.Series(np.where(h % 2 == 0, "dev", "relato"), index=df.index)

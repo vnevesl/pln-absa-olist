@@ -18,11 +18,25 @@ SEED = 42
 ASPECTS = ["produto", "entrega", "recebimento", "anuncio", "outros"]
 
 ASPECT_DESCRIPTIONS = {
-    "produto": "qualidade, funcionamento, durabilidade, tamanho ou aparência do item",
-    "entrega": "prazo, atraso, rapidez, rastreio ou transportadora",
-    "recebimento": "estado em que o pedido chegou: avaria, embalagem, item faltando ou errado",
-    "anuncio": "fidelidade do produto à descrição, às fotos ou ao preço anunciado",
-    "outros": "loja ou vendedor, atendimento, troca, preço, site e demais assuntos da compra",
+    "produto": "qualidade, funcionamento, durabilidade, aparência, custo-benefício e elogios gerais ao item",
+    "entrega": "prazo, atraso, rapidez, não entrega, frete, rastreio, transportadora ou retirada",
+    "recebimento": "estado em que o pedido chegou: avaria, embalagem, item faltando, trocado ou fora do esperado",
+    "anuncio": "fidelidade do produto à descrição, às fotos ou às especificações anunciadas",
+    "outros": "loja ou vendedor, atendimento, troca, estoque, pagamento, site e demais assuntos da compra",
+}
+
+# Versão longa, para o prompt do LLM, seguindo o guia de anotação do RePro
+# (Silva; Real, STIL 2024, §3.1). Ver pesquisa/melhorias/03 §7.1.
+ASPECT_GUIDE = {
+    "produto": "qualidade, funcionamento, durabilidade, tamanho, aparência, originalidade, experiência de uso, "
+               "custo-benefício e elogios ou críticas gerais ao item comprado",
+    "entrega": "prazo, atraso, rapidez, não entrega, frete, rastreio, transportadora, retirada na loja ou "
+               "entrega de produto virtual (vale-presente, código)",
+    "recebimento": "condições em que o pedido chegou: avaria, embalagem, item faltando, item trocado ou "
+                   "produto que não atendeu ao que o cliente esperava receber",
+    "anuncio": "fidelidade à descrição, às imagens ou às especificações técnicas do anúncio",
+    "outros": "loja ou vendedor, atendimento, dúvidas ao vendedor, troca e devolução, estoque, forma de "
+              "pagamento, experiência de compra no site e textos sem relação com a compra",
 }
 
 # Cada aspecto recebe exatamente uma destas classes

@@ -21,6 +21,7 @@ dependencies = [
 transformers = ["torch>=2.1", "transformers>=4.44", "accelerate>=0.30"]
 # Rotulagem por LLM local quantizado (Colab T4)
 llm = ["torch>=2.1", "transformers>=4.44", "accelerate>=0.30", "bitsandbytes>=0.43"]
+api = ["openai>=1.40"]
 # Explicabilidade, equidade e auditoria de rótulos
 analise = ["lime>=0.2", "fairlearn>=0.10", "cleanlab>=2.6", "matplotlib>=3.7", "seaborn>=0.13"]
 # Lematização para a linha de base clássica

@@ -9,6 +9,7 @@ import urllib.request
 import pandas as pd
 
 from .config import INTERIM, RAW
+from .preprocess import model_text
 
 # Espelho oficial da Olist no GitHub (mesmos arquivos publicados no Kaggle)
 OLIST_URL = "https://raw.githubusercontent.com/olist/work-at-olist-data/master/datasets/"
@@ -88,9 +89,10 @@ def build_reviews_table(raw):
     df["atrasado"] = entregue & (df.atraso_dias > 0)
     df["regiao"] = df.customer_state.map(UF2REGIAO)
     df["n_palavras"] = df.texto.str.split().str.len()
+    df["texto_modelo"] = [model_text(ti, tx) for ti, tx in zip(df.review_comment_title, df.texto, strict=True)]
 
     cols = [
-        "review_id", "order_id", "texto", "review_comment_title", "review_score",
+        "review_id", "order_id", "texto", "texto_modelo", "review_comment_title", "review_score",
         "review_creation_date", "order_status", "entregue", "atrasado", "atraso_dias",
         "product_category_name", "n_itens", "n_vendedores", "preco_total",
         "customer_state", "regiao", "n_palavras",

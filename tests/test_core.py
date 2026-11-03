@@ -90,3 +90,50 @@ def test_repro_conversion_rules():
     assert df.loc[1, "motivo_descarte"] == "polaridade mista, vários tópicos"
     assert df.loc[2, "asp_outros"] == "negativo" and df.loc[2, "asp_anuncio"] == "ausente"
     assert df.loc[3, "motivo_descarte"] == "polaridade mista, um tópico"
+
+
+def test_model_text_title_rules():
+    from absa.preprocess import model_text
+    assert model_text("", "Chegou rápido") == "Chegou rápido"
+    assert model_text('"****"', "Chegou rápido") == "Chegou rápido"
+    assert model_text("Chegou rápido", "Chegou rápido e bem embalado") == "Chegou rápido e bem embalado"
+    assert model_text("Bom produto!", "Porém veio quebrado") == "Bom produto! Porém veio quebrado"
+    assert model_text("Ótimo", "Recomendo") == "Ótimo. Recomendo"
+    assert model_text(float("nan"), "Recomendo") == "Recomendo"
+
+
+def test_llm_cache_key_depends_on_model_and_prompt_has_guide():
+    from absa.llm_labeler import cache_key
+    p = build_prompt("chegou quebrado")
+    assert cache_key(p, "sabiazinho-4") != cache_key(p, "qwen")
+    linha_produto = next(line for line in p.splitlines() if line.startswith('- "produto"'))
+    linha_outros = next(line for line in p.splitlines() if line.startswith('- "outros"'))
+    assert "custo-benefício" in linha_produto and "preço" not in linha_outros
+
+
+def test_select_fixed_examples_covers_aspects():
+    from absa.llm_labeler import select_fixed_examples
+    rows = []
+    for a in ASPECTS:
+        for pol in ["positivo", "negativo"]:
+            rotulos = {f"asp_{x}": (pol if x == a else "ausente") for x in ASPECTS}
+            rows.append({"texto_modelo": f"{a} {pol}", **rotulos})
+    neutro = {f"asp_{x}": ("neutro" if x == "entrega" else "ausente") for x in ASPECTS}
+    rows.append({"texto_modelo": "neutro", **neutro})
+    ex = select_fixed_examples(pd.DataFrame(rows), k=10)
+    assert len(ex) == 10
+    assert all(any(e[a] != "ausente" for e in ex) for a in ASPECTS)
+
+
+def test_gold_exclusion_and_split():
+    from absa.sampling import gold_exclusion, olist_split
+    gold = pd.read_csv("data/annotated/olist_para_anotar.csv", keep_default_na=False)
+    df = pd.DataFrame({
+        "review_id": [gold.review_id[0], "novo1", "novo2"],
+        "texto": ["qualquer", gold.texto[1], "texto inédito"],
+        "order_id": ["a", "b", "c"],
+    })
+    assert gold_exclusion(df).tolist() == [True, True, False]
+    s1 = olist_split(df)
+    s2 = olist_split(df.iloc[::-1]).loc[df.index]
+    assert (s1 == s2).all() and set(s1) <= {"dev", "relato"}

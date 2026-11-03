@@ -17,7 +17,7 @@ from torch.utils.data import DataLoader, Dataset
 from transformers import AutoModel, AutoTokenizer, get_linear_schedule_with_warmup
 
 from ..config import ASPECTS, LABEL_COLUMNS, POL2ID, POLARITIES, SEED
-from ..metrics import macro_f1
+from ..metrics import PRIMARY_METRIC
 from .baseline import proba_to_labels
 
 ENCODERS = {
@@ -129,9 +129,9 @@ class EncoderAspectClassifier:
 
             log = {"epoca": epoch, "perda_treino": running / len(loader), "segundos": time.time() - t0}
             if dev_texts is not None:
-                log["f1_macro_dev"] = macro_f1(dev_labels.reset_index(drop=True), self.predict(dev_texts))
-                if save_path and log["f1_macro_dev"] > best:
-                    best = log["f1_macro_dev"]
+                log["f1_dev"] = PRIMARY_METRIC(dev_labels.reset_index(drop=True), self.predict(dev_texts))
+                if save_path and log["f1_dev"] > best:
+                    best = log["f1_dev"]
                     self.save(save_path)
             self.history.append(log)
             print(log)

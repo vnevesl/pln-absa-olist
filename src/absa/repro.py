@@ -19,6 +19,7 @@ import pandas as pd
 from sklearn.model_selection import train_test_split
 
 from .config import ASPECTS, INTERIM, LABEL_COLUMNS, RAW, SEED
+from .preprocess import model_text
 
 REPRO_URL = "https://huggingface.co/datasets/lucasnil/repro/resolve/main/RePro.csv"
 
@@ -50,6 +51,7 @@ def convert(raw: pd.DataFrame) -> pd.DataFrame:
         "review_id": [f"repro_{i}" for i in range(len(raw))],
         "titulo": raw.review_title,
         "texto": raw.review_text.fillna("").str.strip(),
+        "texto_modelo": [model_text(ti, tx) for ti, tx in zip(raw.review_title, raw.review_text, strict=True)],
         "nota": raw.overall_rating,
         "categoria": raw.site_category_lv1,
         "uf": raw.reviewer_state,

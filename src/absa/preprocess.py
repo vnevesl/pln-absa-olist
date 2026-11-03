@@ -34,6 +34,21 @@ STOPWORDS = {
 } - NEGATIONS
 
 
+def model_text(titulo, texto) -> str:
+    """Entrada dos modelos: "título. corpo" quando o título tem conteúdo próprio.
+
+    O RePro foi anotado vendo título e corpo, e a parte positiva de uma avaliação
+    mista muitas vezes está só no título. Títulos vazios, só de pontuação ou
+    asteriscos, ou repetidos no início do corpo, são ignorados.
+    """
+    texto = "" if not isinstance(texto, str) else texto.strip()
+    titulo = "" if not isinstance(titulo, str) else titulo.strip().strip('"').strip()
+    if not re.search(r"[^\W\d_]", titulo) or texto.lower().startswith(titulo.lower()):
+        return texto
+    sep = "" if titulo[-1] in ".!?" else "."
+    return f"{titulo}{sep} {texto}".strip()
+
+
 def clean_light(text: str) -> str:
     text = _URL_RE.sub(" ", text)
     text = _GOT_RE.sub("<LOJA>", text)

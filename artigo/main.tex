@@ -32,12 +32,12 @@
 \maketitle
 
 \begin{abstract}
-A nota em estrelas de uma avaliação de compra on-line indica \emph{quanto} o cliente ficou satisfeito, mas não \emph{com o quê}. Este trabalho trata o problema como análise de sentimentos baseada em categorias de aspecto (ACSA), em que cada comentário recebe uma polaridade para cada um de cinco aspectos: produto, entrega, recebimento, anúncio e outros. Usamos como gabarito humano o corpus RePro (avaliações da Americanas/B2W anotadas por pessoas) e aplicamos os modelos às avaliações da Olist, cujo histórico de pedidos registra o atraso real das entregas. Investigamos três hipóteses: se um encoder pré-treinado em português supera linhas de base clássicas; se rótulos gerados por um modelo de linguagem de grande porte (LLM), nos mesmos textos, chegam perto de rótulos humanos como fonte de treino; e se a predição de ``entrega negativa'' acompanha o atraso registrado além do que a própria nota já explica. Nos resultados preliminares, uma linha de base TF-IDF com regressão logística alcança F1 de pares (aspecto, polaridade) de 0,835 no teste humano, e sua probabilidade de ``entrega negativa'' discrimina pedidos atrasados com AUC de 0,841 e AUC entre 0,64 e 0,74 dentro de cada nota, contra 0,545 de um aspecto-placebo. \pendente{Completar com os resultados do BERTimbau e do LLM.}
+A nota em estrelas de uma avaliação de compra on-line indica \emph{quanto} o cliente ficou satisfeito, mas não \emph{com o quê}. Este trabalho trata o problema como análise de sentimentos baseada em categorias de aspecto (ACSA), em que cada comentário recebe uma polaridade para cada um de cinco aspectos: produto, entrega, recebimento, anúncio e outros. Usamos como gabarito humano o corpus RePro (avaliações da Americanas/B2W anotadas por pessoas) e aplicamos os modelos às avaliações da Olist, cujo histórico de pedidos registra o atraso real das entregas. Investigamos três hipóteses: se um encoder pré-treinado em português supera linhas de base clássicas; se rótulos gerados por um modelo de linguagem de grande porte (LLM), nos mesmos textos, chegam perto de rótulos humanos como fonte de treino; e se a predição de ``entrega negativa'' acompanha o atraso registrado além do que a própria nota já explica. Nos resultados preliminares, uma linha de base TF-IDF com regressão logística alcança F1 de pares (aspecto, polaridade) de 0,867 no teste humano, e sua probabilidade de ``entrega negativa'' discrimina pedidos atrasados com AUC de 0,842 e AUC entre 0,64 e 0,75 dentro de cada nota, contra 0,540 de um aspecto-placebo. \pendente{Completar com os resultados do BERTimbau e do LLM.}
 \end{abstract}
 
 \begin{center}
 \begin{minipage}{0.9\textwidth}
-\small\textbf{Abstract.} Star ratings tell how satisfied a customer is, not why. We frame the problem as aspect-category sentiment analysis (ACSA) over five aspects of Brazilian Portuguese e-commerce reviews, using the human-annotated RePro corpus as gold standard and applying the models to Olist reviews, whose order records include real delivery delays. We test whether a Portuguese encoder beats classical baselines, whether LLM-generated labels on the same texts approach human labels as training signal, and whether predicted ``negative delivery'' tracks real delays beyond the star rating. Preliminary results: a TF-IDF + logistic regression baseline reaches 0.835 aspect--polarity pair F1, and its negative-delivery probability separates late orders with AUC 0.841 (0.64--0.74 within each star rating; placebo aspect 0.545). \pendente{Complete with BERTimbau and LLM results.}
+\small\textbf{Abstract.} Star ratings tell how satisfied a customer is, not why. We frame the problem as aspect-category sentiment analysis (ACSA) over five aspects of Brazilian Portuguese e-commerce reviews, using the human-annotated RePro corpus as gold standard and applying the models to Olist reviews, whose order records include real delivery delays. We test whether a Portuguese encoder beats classical baselines, whether LLM-generated labels on the same texts approach human labels as training signal, and whether predicted ``negative delivery'' tracks real delays beyond the star rating. Preliminary results: a TF-IDF + logistic regression baseline reaches 0.867 aspect--polarity pair F1, and its negative-delivery probability separates late orders with AUC 0.842 (0.64--0.75 within each star rating; placebo aspect 0.540). \pendente{Complete with BERTimbau and LLM results.}
 \end{minipage}
 \end{center}
 
@@ -133,7 +133,7 @@ Outros      & 1.192 &  81 & 273 & 51 \\
 
 \section{Resultados}
 
-\paragraph{Linhas de base e encoders (H1, H2).} A Tabela~\ref{tab:resultados} traz os resultados no teste humano. Nesta versão preliminar, as linhas de base usam apenas o corpo do comentário. \pendente{Atualizar após incluir o título na entrada e completar as linhas restantes.}
+\paragraph{Linhas de base e encoders (H1, H2).} A Tabela~\ref{tab:resultados} traz os resultados no teste humano. Todos os modelos recebem o título seguido do corpo do comentário, como os anotadores do RePro viram; a linha ``sem o título'' mede o efeito dessa escolha. \pendente{Completar as linhas do BERTimbau e do LLM.}
 
 \begin{table}[ht]
 \centering
@@ -143,9 +143,10 @@ Outros      & 1.192 &  81 & 273 & 51 \\
 \toprule
 Modelo & F1 de pares (IC 95\%) & F1 macro & F1 detecção \\
 \midrule
-Regras                         & 0,586 (0,568--0,605) & 0,294 & 0,558 \\
-TF-IDF + \emph{random forest}  & 0,787 (0,771--0,801) & 0,504 & 0,681 \\
-TF-IDF + regressão logística   & 0,835 (0,823--0,847) & 0,700 & 0,828 \\
+Regras                         & 0,654 (0,636--0,672) & 0,326 & 0,610 \\
+TF-IDF + \emph{random forest}  & 0,815 (0,801--0,829) & 0,518 & 0,696 \\
+TF-IDF + regressão logística   & 0,867 (0,856--0,878) & 0,764 & 0,856 \\
+\quad sem o título (só o corpo) & 0,835 (0,822--0,847) & 0,700 & 0,828 \\
 \midrule
 BERTimbau, rótulos humanos (H)        & \pendente{--} & \pendente{--} & \pendente{--} \\
 BERTimbau, rótulos do LLM (L)          & \pendente{--} & \pendente{--} & \pendente{--} \\
@@ -156,7 +157,7 @@ LLM com poucos exemplos                & \pendente{--} & \pendente{--} & \penden
 \end{tabular}
 \end{table}
 
-Entre as linhas de base, a regressão logística supera a \emph{random forest} com folga, e a diferença é maior no F1 macro, que pesa as classes raras. Por aspecto (Tabela~\ref{tab:aspectos}), o desempenho é maior em ``entrega'' e ``produto'' e menor em ``anúncio'', o aspecto mais raro.
+Entre as linhas de base, a regressão logística supera a \emph{random forest} com folga, e a diferença é maior no F1 macro, que pesa as classes raras. Incluir o título aumenta o F1 de pares de 0,835 para 0,867, com intervalos de confiança que não se sobrepõem: o título costuma resumir a opinião (``Produto errado'', ``Não recebi o produto'') e, nas avaliações mistas, traz justamente a parte que o corpo contradiz. Por aspecto (Tabela~\ref{tab:aspectos}), o desempenho é maior em ``entrega'' e ``produto'' e menor em ``anúncio'', o aspecto mais raro.
 
 \begin{table}[ht]
 \centering
@@ -166,11 +167,11 @@ Entre as linhas de base, a regressão logística supera a \emph{random forest} c
 \toprule
 Aspecto & F1 de pares & F1 macro \\
 \midrule
-Produto     & 0,883 & 0,653 \\
-Entrega     & 0,893 & 0,775 \\
-Recebimento & 0,763 & 0,772 \\
-Anúncio     & 0,654 & 0,579 \\
-Outros      & 0,744 & 0,720 \\
+Produto     & 0,913 & 0,712 \\
+Entrega     & 0,918 & 0,834 \\
+Recebimento & 0,785 & 0,779 \\
+Anúncio     & 0,762 & 0,729 \\
+Outros      & 0,774 & 0,767 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -186,17 +187,17 @@ Outros      & 0,744 & 0,720 \\
 Escore & AUC \\
 \midrule
 Nota em estrelas (invertida)                         & 0,817 \\
-$P(\text{entrega negativa})$                          & 0,841 \\
-Nota + $P(\text{entrega negativa})$ (regressão logística)$^{*}$ & 0,863 \\
-Placebo: $P(\text{produto negativo})$                 & 0,545 \\
+$P(\text{entrega negativa})$                          & 0,842 \\
+Nota + $P(\text{entrega negativa})$ (regressão logística)$^{*}$ & 0,864 \\
+Placebo: $P(\text{produto negativo})$                 & 0,540 \\
 \midrule
-$P(\text{entrega negativa})$ dentro de cada nota: 1 / 2 / 3 / 4 / 5 & 0,744 / 0,740 / 0,741 / 0,711 / 0,644 \\
+$P(\text{entrega negativa})$ dentro de cada nota: 1 / 2 / 3 / 4 / 5 & 0,752 / 0,745 / 0,740 / 0,707 / 0,638 \\
 \bottomrule
 \multicolumn{2}{l}{\footnotesize $^{*}$Ajuste e avaliação na mesma amostra. \pendente{Refazer com validação cruzada e IC.}}
 \end{tabular}
 \end{table}
 
-O modelo distingue pedidos atrasados mesmo entre clientes que deram a mesma nota, inclusive entre os que deram 5 estrelas (AUC 0,644). Combinado à nota, ele acrescenta informação que a nota sozinha não contém. O aspecto-placebo fica próximo do acaso. Esses resultados dão suporte preliminar à H3: o modelo captura um fenômeno logístico real, e não apenas o tom negativo do comentário.
+O modelo distingue pedidos atrasados mesmo entre clientes que deram a mesma nota, inclusive entre os que deram 5 estrelas (AUC 0,638). Combinado à nota, ele acrescenta informação que a nota sozinha não contém. O aspecto-placebo fica próximo do acaso. Esses resultados dão suporte preliminar à H3: o modelo captura um fenômeno logístico real, e não apenas o tom negativo do comentário.
 
 \section{Discussão e limitações}
 

@@ -38,13 +38,16 @@ def ic(y, p, metrica, n=1000, rng=RNG):
     return metrica(y, p), *np.quantile(amostras, [0.025, 0.975])
 
 
-regras = pd.DataFrame([heuristic_labels(t) for t in teste.texto])
+regras = pd.DataFrame([heuristic_labels(t) for t in teste.texto_modelo])
 regras.columns = LABEL_COLUMNS
 preds = {"Regras": regras}
-X_treino, X_teste = treino.texto.map(clean_classic), teste.texto.map(clean_classic)
+X_treino, X_teste = treino.texto_modelo.map(clean_classic), teste.texto_modelo.map(clean_classic)
 modelos = {nome: TfidfAspectClassifier(nome).fit(X_treino, treino) for nome in ["rf", "logreg"]}
 preds["TF-IDF + random forest"] = modelos["rf"].predict(X_teste)
 preds["TF-IDF + regressão logística"] = modelos["logreg"].predict(X_teste)
+# Ablação: só o corpo, sem o título
+so_corpo = TfidfAspectClassifier("logreg").fit(treino.texto.map(clean_classic), treino)
+preds["  sem o título (só o corpo)"] = so_corpo.predict(teste.texto.map(clean_classic))
 
 print("Tabela 3 — teste humano do RePro")
 for nome, p in preds.items():
@@ -63,7 +66,7 @@ for c in LABEL_COLUMNS:
 print("Tabela 5 — atraso real na Olist")
 olist = load_reviews()
 olist = olist[olist.entregue].reset_index(drop=True)
-proba = modelos["logreg"].predict_proba(olist.texto.map(clean_classic))
+proba = modelos["logreg"].predict_proba(olist.texto_modelo.map(clean_classic))
 neg = POLARITIES.index("negativo")
 p_entrega = proba[:, ASPECTS.index("entrega"), neg]
 p_produto = proba[:, ASPECTS.index("produto"), neg]
