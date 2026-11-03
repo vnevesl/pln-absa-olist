@@ -71,8 +71,7 @@ src/absa/                     pacote Python usado pelos notebooks
   models/baseline.py          TF-IDF + Regressão Logística / Random Forest
   models/encoder.py           BERTimbau / Albertina com uma cabeça por aspecto
 notebooks/                    roteiro de execução (Colab, GPU T4 gratuita)
-  experimentos_colab          H1 e H3: BERTimbau (rótulos humanos, 3 sementes) e validação na Olist
-  h2_qwen_colab               H2: Qwen2.5-7B rotula o RePro e o BERTimbau treina com esses rótulos
+  experimentos.ipynb          H1, H2 e H3 num único notebook (BERTimbau, Qwen2.5-7B e validação na Olist)
 artigo/                       artigo em LaTeX (Overleaf) e referências
 results/                      predições e resumos gerados pelos notebooks (base das tabelas do artigo)
 anotacao/guia_de_anotacao.md  definição dos aspectos e conversão do RePro
@@ -86,15 +85,14 @@ docs/                         roteiro e decisões de projeto
 
 ## Como executar
 
-**No Colab:** abra o notebook pelo GitHub (Arquivo → Abrir notebook → GitHub → `vnevesl/pln-absa-olist`), escolha
+**No Colab:** abra `notebooks/experimentos.ipynb` pelo GitHub (Arquivo → Abrir notebook → GitHub → `vnevesl/pln-absa-olist`), escolha
 **GPU T4** e clique em **Executar tudo**. A primeira célula clona o repositório, instala o pacote e salva os
 resultados no Google Drive; se a sessão cair, rodar de novo continua de onde parou.
 
-1. `experimentos_colab.ipynb` (~20 min): H1 e H3.
-2. `h2_qwen_colab.ipynb` (~2–3 h): H2.
+O notebook roda H1 e H3 primeiro (~20 min) e depois a H2 (~2–3 h, quase tudo na rotulagem pelo Qwen).
 
 As tabelas do artigo saem de `scripts/numeros_artigo.py` (linhas de base, CPU) e `scripts/resultados_bertimbau.py`
-(lê `results/encoders/`).
+(lê `results/encoders/` e `results/h2/`).
 
 **Localmente** (testes e linhas de base, sem GPU):
 

@@ -1,5 +1,7 @@
 # Detalhamento do que roda no Colab — pln-absa-olist
 
+> Os dois notebooks descritos aqui foram depois unidos em `notebooks/experimentos.ipynb`, com o mesmo código.
+
 Repositório: https://github.com/vnevesl/pln-absa-olist
 Objetivo deste documento: permitir que outra pessoa (ou o assistente dela) revise a metodologia e o código e aponte erros ou escolhas discutíveis.
 
