@@ -28,14 +28,21 @@ Quando um cliente dá uma nota baixa numa compra online, a loja sabe que ele fic
 
 > **Mudança em relação ao pré-projeto:** a anotação própria de 800 comentários foi substituída pelo gabarito humano publicado do RePro (mais escala e comparabilidade com a literatura), e o aspecto "atendimento" virou "outros" para seguir a taxonomia do RePro. Uma amostra opcional de 100 comentários da Olist, anotada à mão, mede a mudança de domínio.
 
-### Resultados até agora (teste humano do RePro, n = 1.597)
+### Resultados (teste humano do RePro, n = 1.597)
 
-| Modelo | F1 macro (IC95%) | F1 tupla |
+Métrica principal: F1 de pares (aspecto, polaridade). Entrada dos modelos: título + corpo do comentário.
+
+| Modelo | F1 de pares (IC95%) | F1 macro |
 |---|---|---|
-| Regras (palavras-chave) | 0,442 (0,432–0,453) | 0,586 |
-| TF-IDF + Random Forest | 0,612 (0,585–0,639) | 0,787 |
-| TF-IDF + Regressão Logística | 0,759 (0,730–0,783) | 0,835 |
-| BERTimbau, Albertina, LLM | *a rodar no Colab (notebooks 04 e 05)* | |
+| Regras (palavras-chave) | 0,654 (0,636–0,672) | 0,326 |
+| TF-IDF + Random Forest | 0,815 (0,801–0,829) | 0,518 |
+| TF-IDF + Regressão Logística | 0,867 (0,856–0,878) | 0,764 |
+| **BERTimbau, rótulos humanos (3 sementes)** | **0,918 ± 0,002** (0,908–0,927) | **0,848** |
+| BERTimbau, só a validação humana (controle) | 0,779 (0,766–0,792) | 0,429 |
+| BERTimbau, rótulos do Qwen2.5-7B (H2) | *em execução* | |
+
+Na Olist (metade "relato", 19.239 pedidos entregues), a probabilidade prevista de "entrega negativa" acrescenta
+informação à nota para detectar atraso real: AUC de 0,817 (só a nota) para 0,859 (nota + BERTimbau).
 
 ### Números verificados nos dados
 
@@ -60,28 +67,33 @@ src/absa/                     pacote Python usado pelos notebooks
   sampling.py                 amostra opcional da Olist para anotação
   models/baseline.py          TF-IDF + Regressão Logística / Random Forest
   models/encoder.py           BERTimbau / Albertina com uma cabeça por aspecto
-notebooks/                    roteiro de execução (Colab)
-  01_eda_olist                exploração da Olist e números do pré-projeto
-  02_gabarito_repro           conversão do RePro e distribuição dos rótulos
-  03_baselines                regras e TF-IDF (CPU)
-  04_rotulagem_llm            Qwen2.5-7B: concordância com humanos e rótulos fracos (GPU)
-  05_encoders                 BERTimbau e Albertina com rótulos humanos × LLM (GPU)
-  06_comparacao               tabela final, IC, bootstrap pareado, McNemar
-  07_validacao_olist          aplicação na Olist e validação com o atraso real (GPU)
-  08_xai_fairness             LIME e Fairlearn (GPU)
+notebooks/                    roteiro de execução (Colab, GPU T4 gratuita)
+  experimentos_colab          H1 e H3: BERTimbau (rótulos humanos, 3 sementes) e validação na Olist
+  h2_qwen_colab               H2: Qwen2.5-7B rotula o RePro e o BERTimbau treina com esses rótulos
+artigo/                       artigo em LaTeX (Overleaf) e referências
+results/                      predições e resumos gerados pelos notebooks (base das tabelas do artigo)
 anotacao/guia_de_anotacao.md  definição dos aspectos e conversão do RePro
 data/annotated/               amostra opcional da Olist para anotação manual
 tests/                        testes do pacote (pytest)
 pre-projeto/                  PDF entregue e fonte HTML
 pesquisa/                     levantamento do estado da arte
-scripts/                      estatísticas do pré-projeto
+scripts/                      números do artigo (numeros_artigo.py, resultados_bertimbau.py)
+docs/                         roteiro e decisões de projeto
 ```
 
 ## Como executar
 
-**No Colab:** abra um notebook pelo GitHub (Arquivo → Abrir notebook → GitHub → `vnevesl/pln-absa-olist`). A primeira célula clona o repositório, instala o pacote e liga cache, modelos e predições ao Google Drive. Rode na ordem: 02 → 03 → 04 → 05 → 06 → 07 → 08.
+**No Colab:** abra o notebook pelo GitHub (Arquivo → Abrir notebook → GitHub → `vnevesl/pln-absa-olist`), escolha
+**GPU T4** e clique em **Executar tudo**. A primeira célula clona o repositório, instala o pacote e salva os
+resultados no Google Drive; se a sessão cair, rodar de novo continua de onde parou.
 
-**Localmente** (só os notebooks sem GPU: 01, 02, 03 e 06):
+1. `experimentos_colab.ipynb` (~20 min): H1 e H3.
+2. `h2_qwen_colab.ipynb` (~2–3 h): H2.
+
+As tabelas do artigo saem de `scripts/numeros_artigo.py` (linhas de base, CPU) e `scripts/resultados_bertimbau.py`
+(lê `results/encoders/`).
+
+**Localmente** (testes e linhas de base, sem GPU):
 
 ```bash
 python -m venv .venv && source .venv/bin/activate
