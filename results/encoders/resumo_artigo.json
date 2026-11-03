@@ -1,0 +1,132 @@
+{
+ "TF-IDF + RL": {
+  "sementes": 1,
+  "f1_pares_media": 0.867375049193231,
+  "f1_pares_dp": null,
+  "ic_semente_mediana": [
+   0.8559938310239616,
+   0.8782233655721101
+  ],
+  "f1_macro_media": 0.763969246106552,
+  "f1_deteccao_media": 0.8564536185184417
+ },
+ "BERTimbau H": {
+  "sementes": 3,
+  "f1_pares_media": 0.917743776628527,
+  "f1_pares_dp": 0.0023076635917113316,
+  "ic_semente_mediana": [
+   0.9079572110952162,
+   0.9270306702114021
+  ],
+  "f1_macro_media": 0.8479035158821815,
+  "f1_deteccao_media": 0.917304181223225
+ },
+ "BERTimbau V": {
+  "sementes": 1,
+  "f1_pares_media": 0.7792848335388409,
+  "f1_pares_dp": null,
+  "ic_semente_mediana": [
+   0.7657398568888161,
+   0.7923030869500397
+  ],
+  "f1_macro_media": 0.4288351147336297,
+  "f1_deteccao_media": 0.6385671393603858
+ },
+ "comparacoes": {
+  "BERTimbau H − TF-IDF": {
+   "diferenca": 0.04824434039384251,
+   "ic95": [
+    0.03754506998489638,
+    0.05879074182904884
+   ],
+   "p_valor": 0.0,
+   "ep": 0.005420305915903336,
+   "p_holm": 0.0
+  },
+  "BERTimbau H − BERTimbau V": {
+   "diferenca": 0.13633455604823264,
+   "ic95": [
+    0.12335321545273743,
+    0.14911361802927967
+   ],
+   "p_valor": 0.0,
+   "ep": 0.006575961895575827,
+   "p_holm": 0.0
+  }
+ },
+ "por_aspecto": {
+  "pares_bert": {
+   "produto": 0.942,
+   "entrega": 0.955,
+   "recebimento": 0.89,
+   "anuncio": 0.866,
+   "outros": 0.836,
+   "MÉDIA": 0.898
+  },
+  "pares_tfidf": {
+   "produto": 0.913,
+   "entrega": 0.918,
+   "recebimento": 0.785,
+   "anuncio": 0.762,
+   "outros": 0.774,
+   "MÉDIA": 0.83
+  },
+  "macro_bert": {
+   "produto": 0.793,
+   "entrega": 0.895,
+   "recebimento": 0.899,
+   "anuncio": 0.828,
+   "outros": 0.825,
+   "MÉDIA": 0.848
+  },
+  "macro_tfidf": {
+   "produto": 0.712,
+   "entrega": 0.834,
+   "recebimento": 0.779,
+   "anuncio": 0.729,
+   "outros": 0.767,
+   "MÉDIA": 0.764
+  }
+ },
+ "h3": {
+  "n": 19239,
+  "atrasados": 1876,
+  "nota (invertida)": [
+   0.8214296766388149,
+   0.811789518304805,
+   0.8306641291575018
+  ],
+  "BERTimbau P(entrega neg)": [
+   0.8295202914758695,
+   0.8180579698690087,
+   0.83997936034325
+  ],
+  "TF-IDF P(entrega neg)": [
+   0.8428116266152801,
+   0.8325740885788916,
+   0.8526569782063362
+  ],
+  "placebo BERTimbau P(produto neg)": [
+   0.46125958723835836,
+   0.447540012339613,
+   0.4749127653039524
+  ],
+  "cv5 nota": 0.8172913243329103,
+  "cv5 nota + BERTimbau P(entrega neg)": 0.858540134543383,
+  "cv5 nota + TF-IDF P(entrega neg)": 0.8644570617838315,
+  "por_nota BERTimbau": {
+   "1": 0.7871823286261457,
+   "2": 0.7647459844580005,
+   "3": 0.6970479001613702,
+   "4": 0.6585579220590198,
+   "5": 0.5389598362946507
+  },
+  "por_nota TF-IDF": {
+   "1": 0.7634677211296117,
+   "2": 0.7422684068662222,
+   "3": 0.707907946058596,
+   "4": 0.7094724489672154,
+   "5": 0.6332393859154662
+  }
+ }
+}

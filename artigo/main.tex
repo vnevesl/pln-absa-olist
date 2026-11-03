@@ -32,12 +32,12 @@
 \maketitle
 
 \begin{abstract}
-A nota em estrelas de uma avaliação de compra on-line indica \emph{quanto} o cliente ficou satisfeito, mas não \emph{com o quê}. Este trabalho trata o problema como análise de sentimentos baseada em categorias de aspecto (ACSA), em que cada comentário recebe uma polaridade para cada um de cinco aspectos: produto, entrega, recebimento, anúncio e outros. Usamos como gabarito humano o corpus RePro (avaliações da Americanas/B2W anotadas por pessoas) e aplicamos os modelos às avaliações da Olist, cujo histórico de pedidos registra o atraso real das entregas. Investigamos três hipóteses: se um encoder pré-treinado em português supera linhas de base clássicas; se rótulos gerados por um modelo de linguagem de grande porte (LLM), nos mesmos textos, chegam perto de rótulos humanos como fonte de treino; e se a predição de ``entrega negativa'' acompanha o atraso registrado além do que a própria nota já explica. Nos resultados preliminares, uma linha de base TF-IDF com regressão logística alcança F1 de pares (aspecto, polaridade) de 0,867 no teste humano, e sua probabilidade de ``entrega negativa'' discrimina pedidos atrasados com AUC de 0,842 e AUC entre 0,64 e 0,75 dentro de cada nota, contra 0,540 de um aspecto-placebo. \pendente{Completar com os resultados do BERTimbau e do LLM.}
+A nota em estrelas de uma avaliação de compra on-line indica \emph{quanto} o cliente ficou satisfeito, mas não \emph{com o quê}. Este trabalho trata o problema como análise de sentimentos baseada em categorias de aspecto (ACSA), em que cada comentário recebe uma polaridade para cada um de cinco aspectos: produto, entrega, recebimento, anúncio e outros. Usamos como gabarito humano o corpus RePro (avaliações da Americanas/B2W anotadas por pessoas) e aplicamos os modelos às avaliações da Olist, cujo histórico de pedidos registra o atraso real das entregas. Investigamos três hipóteses: se um encoder pré-treinado em português supera linhas de base clássicas; se rótulos gerados por um modelo de linguagem de grande porte (LLM), nos mesmos textos, chegam perto de rótulos humanos como fonte de treino; e se a predição de ``entrega negativa'' acompanha o atraso registrado além do que a própria nota já explica. O BERTimbau ajustado com rótulos humanos alcança F1 de pares (aspecto, polaridade) de 0,918 no teste humano, contra 0,867 da melhor linha de base clássica. Na Olist, a probabilidade prevista de ``entrega negativa'' acrescenta poder de discriminação de pedidos atrasados à própria nota (AUC de 0,817 para 0,859), enquanto um aspecto-placebo não acompanha o atraso; nesse domínio, porém, um modelo TF-IDF se sai tão bem quanto o encoder. \pendente{Completar com o resultado da H2.}
 \end{abstract}
 
 \begin{center}
 \begin{minipage}{0.9\textwidth}
-\small\textbf{Abstract.} Star ratings tell how satisfied a customer is, not why. We frame the problem as aspect-category sentiment analysis (ACSA) over five aspects of Brazilian Portuguese e-commerce reviews, using the human-annotated RePro corpus as gold standard and applying the models to Olist reviews, whose order records include real delivery delays. We test whether a Portuguese encoder beats classical baselines, whether LLM-generated labels on the same texts approach human labels as training signal, and whether predicted ``negative delivery'' tracks real delays beyond the star rating. Preliminary results: a TF-IDF + logistic regression baseline reaches 0.867 aspect--polarity pair F1, and its negative-delivery probability separates late orders with AUC 0.842 (0.64--0.75 within each star rating; placebo aspect 0.540). \pendente{Complete with BERTimbau and LLM results.}
+\small\textbf{Abstract.} Star ratings tell how satisfied a customer is, not why. We frame the problem as aspect-category sentiment analysis (ACSA) over five aspects of Brazilian Portuguese e-commerce reviews, using the human-annotated RePro corpus as gold standard and applying the models to Olist reviews, whose order records include real delivery delays. We test whether a Portuguese encoder beats classical baselines, whether LLM-generated labels on the same texts approach human labels as training signal, and whether predicted ``negative delivery'' tracks real delays beyond the star rating. A fine-tuned BERTimbau reaches 0.918 aspect--polarity pair F1 on the human test set, against 0.867 for the best classical baseline. On Olist, the predicted negative-delivery probability adds discriminative power for late orders beyond the star rating (AUC 0.817 to 0.859), while a placebo aspect does not track delays; in this out-of-domain setting, however, a TF-IDF model performs as well as the encoder. \pendente{Complete with H2 result.}
 \end{minipage}
 \end{center}
 
@@ -119,7 +119,7 @@ Outros      & 1.192 &  81 & 273 & 51 \\
 \begin{itemize}
   \item \textbf{Regras:} listas de raízes de palavras por aspecto e polaridade, como piso de referência.
   \item \textbf{TF-IDF:} unigramas e bigramas sobre texto normalizado (minúsculas, sem acentos, \emph{stopwords} removidas preservando negações), com um classificador de quatro classes por aspecto: regressão logística com pesos de classe balanceados ou \emph{random forest}.
-  \item \textbf{BERTimbau Base} \citep{souza2020bertimbau}: o vetor do token \texttt{[CLS]} alimenta uma camada linear com uma saída \emph{softmax} de quatro classes por aspecto; a perda é a média das entropias cruzadas dos aspectos, com pesos de classe. Entrada: título e corpo do comentário, até 128 \emph{tokens}; taxa de aprendizado $3\times10^{-5}$; quatro épocas; seleção da época na validação humana. \pendente{Confirmar hiperparâmetros finais.}
+  \item \textbf{BERTimbau Base} \citep{souza2020bertimbau}: o vetor do token \texttt{[CLS]} alimenta uma camada linear com uma saída \emph{softmax} de quatro classes por aspecto; a perda é a média das entropias cruzadas dos aspectos, com pesos de classe. Entrada: título e corpo do comentário, até 128 \emph{tokens}; taxa de aprendizado $3\times10^{-5}$, lotes de 32, quatro épocas e precisão mista em uma GPU T4 do Google Colab (cerca de 3 minutos por treino); a época é escolhida pelo F1 de pares em 599 avaliações da validação humana.
   \item \textbf{LLM com poucos exemplos:} \pendente{modelo escolhido no piloto: Qwen2.5-7B, Qwen2.5-14B-AWQ ou Sabiazinho-4}, com instruções que reproduzem o guia de anotação do RePro, exemplos fixos tirados da validação, temperatura zero e saída restrita a um esquema JSON com os quatro valores por aspecto.
 \end{itemize}
 
@@ -133,7 +133,7 @@ Outros      & 1.192 &  81 & 273 & 51 \\
 
 \section{Resultados}
 
-\paragraph{Linhas de base e encoders (H1, H2).} A Tabela~\ref{tab:resultados} traz os resultados no teste humano. Todos os modelos recebem o título seguido do corpo do comentário, como os anotadores do RePro viram; a linha ``sem o título'' mede o efeito dessa escolha. \pendente{Completar as linhas do BERTimbau e do LLM.}
+\paragraph{Linhas de base e BERTimbau (H1).} A Tabela~\ref{tab:resultados} traz os resultados no teste humano. Todos os modelos recebem o título seguido do corpo do comentário, como os anotadores do RePro viram; a linha ``sem o título'' mede o efeito dessa escolha. Para o BERTimbau, reportamos a média e o desvio padrão de três sementes e o IC da semente mediana.
 
 \begin{table}[ht]
 \centering
@@ -148,56 +148,60 @@ TF-IDF + \emph{random forest}  & 0,815 (0,801--0,829) & 0,518 & 0,696 \\
 TF-IDF + regressão logística   & 0,867 (0,856--0,878) & 0,764 & 0,856 \\
 \quad sem o título (só o corpo) & 0,835 (0,822--0,847) & 0,700 & 0,828 \\
 \midrule
-BERTimbau, rótulos humanos (H)        & \pendente{--} & \pendente{--} & \pendente{--} \\
-BERTimbau, rótulos do LLM (L)          & \pendente{--} & \pendente{--} & \pendente{--} \\
-BERTimbau, LLM filtrado por confiança  & \pendente{--} & \pendente{--} & \pendente{--} \\
-BERTimbau, só validação humana (controle) & \pendente{--} & \pendente{--} & \pendente{--} \\
-LLM com poucos exemplos                & \pendente{--} & \pendente{--} & \pendente{--} \\
+BERTimbau, rótulos humanos (3 sementes) & \textbf{0,918} $\pm$ 0,002 (0,908--0,927) & \textbf{0,848} & \textbf{0,917} \\
+BERTimbau, só a validação humana (controle) & 0,779 (0,766--0,792) & 0,429 & 0,639 \\
+BERTimbau, rótulos do LLM               & \pendente{--} & \pendente{--} & \pendente{--} \\
+LLM com poucos exemplos                 & \pendente{--} & \pendente{--} & \pendente{--} \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-Entre as linhas de base, a regressão logística supera a \emph{random forest} com folga, e a diferença é maior no F1 macro, que pesa as classes raras. Incluir o título aumenta o F1 de pares de 0,835 para 0,867, com intervalos de confiança que não se sobrepõem: o título costuma resumir a opinião (``Produto errado'', ``Não recebi o produto'') e, nas avaliações mistas, traz justamente a parte que o corpo contradiz. Por aspecto (Tabela~\ref{tab:aspectos}), o desempenho é maior em ``entrega'' e ``produto'' e menor em ``anúncio'', o aspecto mais raro.
+O BERTimbau ajustado com os rótulos humanos é o melhor modelo em todas as métricas, com variação pequena entre sementes ($\pm$0,002). Em comparação pareada com a regressão logística, a diferença no F1 de pares é de +0,048 (IC 95\% de +0,038 a +0,059; $p < 0{,}001$ com correção de Holm), o que confirma a H1. O ganho é maior no F1 macro (de 0,764 para 0,848), que pesa as classes raras, e aparece em todos os aspectos (Tabela~\ref{tab:aspectos}), com os maiores avanços em ``recebimento'' e ``anúncio''. O controle treinado só com os 599 exemplos humanos da validação fica bem abaixo (0,779), o que indica que o volume de rótulos do treino importa para este problema. Entre as linhas de base, incluir o título aumenta o F1 de pares de 0,835 para 0,867: o título costuma resumir a opinião (``Produto errado'', ``Não recebi o produto'') e, nas avaliações mistas, traz justamente a parte que o corpo contradiz.
 
 \begin{table}[ht]
 \centering
-\caption{TF-IDF + regressão logística por aspecto (teste humano).}
+\caption{Desempenho por aspecto no teste humano: BERTimbau (média de três sementes) e TF-IDF + regressão logística.}
 \label{tab:aspectos}
+\begin{tabular}{lcccc}
+\toprule
+ & \multicolumn{2}{c}{F1 de pares} & \multicolumn{2}{c}{F1 macro} \\
+Aspecto & BERTimbau & TF-IDF & BERTimbau & TF-IDF \\
+\midrule
+Produto     & 0,942 & 0,913 & 0,793 & 0,712 \\
+Entrega     & 0,955 & 0,918 & 0,895 & 0,834 \\
+Recebimento & 0,890 & 0,785 & 0,899 & 0,779 \\
+Anúncio     & 0,866 & 0,762 & 0,828 & 0,729 \\
+Outros      & 0,836 & 0,774 & 0,825 & 0,767 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Humano $\times$ LLM (H2).} \pendente{Executar a rotulagem pelo LLM e o treino com esses rótulos, ou mover a H2 para trabalhos futuros.}
+
+\paragraph{Validação com o atraso real (H3).} Os dois modelos, treinados apenas no RePro, foram aplicados à metade ``relato'' da Olist, que não foi usada em nenhuma decisão de modelagem: 19.239 comentários de pedidos entregues, dos quais 1.876 atrasados (Tabela~\ref{tab:atraso}).
+
+\begin{table}[ht]
+\centering
+\caption{AUC para discriminar pedidos atrasados na Olist (metade ``relato''). IC de 95\% por \emph{bootstrap}; as combinações com a nota usam regressão logística com validação cruzada em 5 partes.}
+\label{tab:atraso}
 \begin{tabular}{lcc}
 \toprule
-Aspecto & F1 de pares & F1 macro \\
+Escore & BERTimbau & TF-IDF + RL \\
 \midrule
-Produto     & 0,913 & 0,712 \\
-Entrega     & 0,918 & 0,834 \\
-Recebimento & 0,785 & 0,779 \\
-Anúncio     & 0,762 & 0,729 \\
-Outros      & 0,774 & 0,767 \\
+Nota em estrelas (invertida)            & \multicolumn{2}{c}{0,821 (0,812--0,831)} \\
+Nota (regressão logística)              & \multicolumn{2}{c}{0,817} \\
+$P(\text{entrega negativa})$            & 0,830 (0,818--0,840) & 0,843 (0,833--0,853) \\
+Nota + $P(\text{entrega negativa})$     & 0,859 & 0,864 \\
+Placebo: $P(\text{produto negativo})$   & 0,461 (0,448--0,475) & -- \\
+\midrule
+\multicolumn{3}{l}{$P(\text{entrega negativa})$ dentro de cada nota} \\
+\quad 1 / 2 / 3 estrelas & 0,787 / 0,765 / 0,697 & 0,763 / 0,742 / 0,708 \\
+\quad 4 / 5 estrelas     & 0,659 / 0,539         & 0,709 / 0,633 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\paragraph{Validação com o atraso real (H3).} A Tabela~\ref{tab:atraso} usa o modelo TF-IDF + regressão logística, treinado só no RePro e aplicado a 38.796 comentários de pedidos entregues da Olist, dos quais 3.747 atrasados.
-
-\begin{table}[ht]
-\centering
-\caption{AUC para discriminar pedidos atrasados na Olist (TF-IDF + regressão logística treinado no RePro).}
-\label{tab:atraso}
-\begin{tabular}{lc}
-\toprule
-Escore & AUC \\
-\midrule
-Nota em estrelas (invertida)                         & 0,817 \\
-$P(\text{entrega negativa})$                          & 0,842 \\
-Nota + $P(\text{entrega negativa})$ (regressão logística)$^{*}$ & 0,864 \\
-Placebo: $P(\text{produto negativo})$                 & 0,540 \\
-\midrule
-$P(\text{entrega negativa})$ dentro de cada nota: 1 / 2 / 3 / 4 / 5 & 0,752 / 0,745 / 0,740 / 0,707 / 0,638 \\
-\bottomrule
-\multicolumn{2}{l}{\footnotesize $^{*}$Ajuste e avaliação na mesma amostra. \pendente{Refazer com validação cruzada e IC.}}
-\end{tabular}
-\end{table}
-
-O modelo distingue pedidos atrasados mesmo entre clientes que deram a mesma nota, inclusive entre os que deram 5 estrelas (AUC 0,638). Combinado à nota, ele acrescenta informação que a nota sozinha não contém. O aspecto-placebo fica próximo do acaso. Esses resultados dão suporte preliminar à H3: o modelo captura um fenômeno logístico real, e não apenas o tom negativo do comentário.
+Os dois modelos discriminam pedidos atrasados e, combinados à nota, acrescentam informação que ela sozinha não contém (AUC de 0,817 para 0,859 com o BERTimbau e 0,864 com o TF-IDF). O sinal persiste dentro de cada nota, e o aspecto-placebo não acompanha o atraso: sua AUC fica abaixo de 0,5, o que é coerente com clientes de pedidos atrasados reclamarem da entrega, e não do produto. Esses resultados confirmam a H3. Há, porém, uma diferença instrutiva: o BERTimbau, claramente superior no teste do RePro, não supera o TF-IDF na Olist. Ele é melhor entre clientes muito insatisfeitos (1 e 2 estrelas), mas perde força entre os satisfeitos (4 e 5 estrelas), em que as queixas de entrega são mais sutis. Ganhos medidos no domínio de treino não se transferem automaticamente para outra loja, o que reforça o valor de uma validação extrínseca.
 
 \section{Discussão e limitações}
 
@@ -213,7 +217,9 @@ O modelo distingue pedidos atrasados mesmo entre clientes que deram a mesma nota
 
 \section{Conclusão}
 
-\pendente{Escrever após os resultados finais: resposta a H1, H2 e H3, contribuição e trabalhos futuros (teste de casos mistos, perda de rótulo parcial para aproveitar os casos descartados, adaptação de domínio e explicações locais com LIME \citep{ribeiro2016lime}).}
+Este trabalho tratou a análise de sentimentos de avaliações de comércio eletrônico em português como classificação por categoria de aspecto, usando um gabarito humano publicado e uma verdade de campo independente na loja de aplicação. O BERTimbau ajustado com rótulos humanos alcança F1 de pares de 0,918 no teste do RePro, 4,8 pontos acima da melhor linha de base clássica, com ganhos em todos os aspectos (H1). Aplicadas a outra loja, as predições de ``entrega negativa'' acompanham o atraso registrado nos pedidos além do que a nota em estrelas já explica (H3); nesse cenário, porém, o modelo clássico se mostrou tão bom quanto o encoder, um lembrete de que o desempenho no domínio de treino não garante o desempenho no domínio de uso. \pendente{Resultado da H2 ou frase indicando que ficou para trabalho futuro.}
+
+Como trabalhos futuros, destacamos: um conjunto de teste com avaliações de polaridade mista desambiguadas à mão, como no MAMS \citep{jiang2019mams}; uma perda de rótulo parcial que aproveite no treino as 2.018 avaliações hoje descartadas; a adaptação de domínio por pré-treino continuado nos textos da Olist \citep{gururangan2020dont}; e explicações locais com LIME \citep{ribeiro2016lime} para auditar em que palavras o modelo se apoia.
 
 \bibliographystyle{plainnat}
 \bibliography{referencias}
