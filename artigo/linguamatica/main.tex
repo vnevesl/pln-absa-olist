@@ -1,0 +1,243 @@
+\documentclass[a4paper, twocolumn, 11pt, twoside]{article}
+
+% ORCID
+\usepackage{academicons}
+\usepackage{hyperref}
+\usepackage{xcolor}
+\definecolor{orcidlogocolor}{HTML}{A6CE39}
+\newcommand{\meuorcid}[1]{\href{https://orcid.org/#1}{\textcolor{orcidlogocolor}{\aiOrcid}}}
+
+\usepackage[brazilian]{babel}
+\usepackage{linguamatica}
+
+% Marca o que ainda depende de experimento. Antes da entrega, conferir que não sobrou nenhum.
+\newcommand{\pendente}[1]{\textcolor{red}{[#1]}}
+
+\bibliographystyle{sp_por}
+
+%% Campos preenchidos pelos editores da revista (mantidos do modelo)
+\submitted{15 de \OCT{} 2017}
+\accepted{3 de \DEC{} 2017}
+
+\title{Do que o cliente reclama? Análise de sentimentos baseada em aspectos em avaliações de comércio eletrônico em português com rótulos humanos e de LLM}
+
+\titleEN{What Is the Customer Complaining About? Aspect-Based Sentiment Analysis of Portuguese E-Commerce Reviews with Human and LLM Labels}
+
+\author{
+  Vitor Neves de Lima
+  \instituto{Ibmec BH}
+  \email{vineveslima11@gmail.com}
+  \and
+  Eduardo Campos dos Santos \meuorcid{0000-0001-7361-3009}
+  \instituto{Ibmec BH}
+  \email{edu.campos.santos@gmail.com}
+}
+
+\begin{document}
+\maketitle
+
+\begin{resumo}
+A nota em estrelas de uma avaliação de compra on-line indica \emph{quanto} o cliente ficou satisfeito, mas não \emph{com o quê}. Este trabalho trata o problema como análise de sentimentos baseada em categorias de aspecto (ACSA), em que cada comentário recebe uma polaridade para cada um de cinco aspectos: produto, entrega, recebimento, anúncio e outros. Usamos como gabarito humano o corpus RePro (avaliações da Americanas/B2W anotadas por pessoas) e aplicamos os modelos às avaliações da Olist, cujo histórico de pedidos registra o atraso real das entregas. Investigamos três hipóteses: se um encoder pré-treinado em português supera linhas de base clássicas; se rótulos gerados por um modelo de linguagem de grande porte (LLM), nos mesmos textos, chegam perto de rótulos humanos como fonte de treino; e se a predição de ``entrega negativa'' acompanha o atraso registrado além do que a própria nota já explica. O BERTimbau ajustado com rótulos humanos alcança F1 de pares (aspecto, polaridade) de 0,918 no teste humano, contra 0,867 da melhor linha de base clássica. Na Olist, a probabilidade prevista de ``entrega negativa'' acrescenta poder de discriminação de pedidos atrasados à própria nota (AUC de 0,817 para 0,859), enquanto um aspecto-placebo não acompanha o atraso; nesse domínio, porém, um modelo TF-IDF se sai tão bem quanto o encoder. Já os rótulos de um LLM aberto e gratuito (Qwen2.5-7B-Instruct, em 4 bits) concordam com os humanos em F1 de pares de 0,772, e o BERTimbau treinado com eles chega a 0,794: recupera apenas 11\% da distância entre um controle com 599 rótulos humanos e o modelo com o treino humano completo, abaixo até da linha de base clássica treinada com rótulos humanos.
+\end{resumo}
+
+\palavraschave{análise de sentimentos baseada em aspectos, comércio eletrônico, bertimbau, modelos de linguagem, rotulagem automática}
+
+\begin{abstract}
+Star ratings tell how satisfied a customer is, not why. We frame the problem as aspect-category sentiment analysis (ACSA) over five aspects of Brazilian Portuguese e-commerce reviews, using the human-annotated RePro corpus as gold standard and applying the models to Olist reviews, whose order records include real delivery delays. We test whether a Portuguese encoder beats classical baselines, whether LLM-generated labels on the same texts approach human labels as training signal, and whether predicted ``negative delivery'' tracks real delays beyond the star rating. A fine-tuned BERTimbau reaches 0.918 aspect--polarity pair F1 on the human test set, against 0.867 for the best classical baseline. On Olist, the predicted negative-delivery probability adds discriminative power for late orders beyond the star rating (AUC 0.817 to 0.859), while a placebo aspect does not track delays; in this out-of-domain setting, however, a TF-IDF model performs as well as the encoder. Labels from a free open LLM (4-bit Qwen2.5-7B-Instruct) agree with humans at 0.772 pair F1, and BERTimbau trained on them reaches 0.794, recovering only 11\% of the gap between a 599-label human control and the fully human-trained model, below even the classical baseline trained on human labels.
+\end{abstract}
+
+\keywords{aspect-based sentiment analysis, e-commerce, bertimbau, large language models, automatic labeling}
+
+\section{Introdução}
+
+Plataformas de comércio eletrônico acumulam milhares de comentários escritos por clientes depois de cada compra, mas o que costuma ser acompanhado é a nota média. Um comentário como ``o produto é ótimo, mas chegou dez dias atrasado e a caixa veio amassada'' elogia o produto e critica a entrega na mesma frase. Reduzido a uma polaridade única, ele perde exatamente a informação que permitiria agir: em um \emph{marketplace} com muitos vendedores e transportadoras, ``o cliente não gostou do produto'' e ``o pedido atrasou'' indicam responsáveis diferentes.
+
+A análise de sentimentos baseada em aspectos (ABSA) decompõe a opinião por alvo \citep{pontiki2014semeval,zhang2023survey}. Neste trabalho adotamos a formulação por categoria de aspecto (ACSA): dado um comentário, o sistema atribui a cada uma de cinco categorias predefinidas uma de quatro classes (ausente, positivo, negativo ou neutro). A formulação por categoria é adequada a comentários curtos, em que muitos aspectos aparecem só de forma implícita (``chegou antes do previsto'' fala de entrega sem usar a palavra).
+
+Rotular aspectos à mão é caro, e modelos de linguagem de grande porte (LLMs) passaram a ser usados como anotadores baratos \citep{gilardi2023chatgpt,wang2021labeling}. Em avaliações de produtos em português, porém, há sinais de que eles erram nas categorias mais nuançadas \citep{silva2024sabia}, e a literatura de supervisão fraca alerta que um pequeno conjunto limpo pode bastar para superar rótulos ruidosos \citep{zhu2023weaker}. Formulamos três hipóteses:
+
+\begin{description}
+  \item[H1.] Um encoder pré-treinado em português (BERTimbau) ajustado para a tarefa supera as linhas de base de regras e TF-IDF no teste humano.
+  \item[H2.] Treinar o mesmo encoder com rótulos gerados por LLM, nos mesmos textos, recupera a maior parte do desempenho obtido com rótulos humanos.
+  \item[H3.] Aplicada a outra loja (Olist), a probabilidade prevista de ``entrega negativa'' discrimina pedidos efetivamente atrasados, inclusive dentro de cada nota em estrelas.
+\end{description}
+
+A H3 usa uma verdade de campo que não depende de anotação humana nem de IA: a data de entrega registrada no sistema da loja.
+
+\section{Trabalhos relacionados}
+
+\paragraph{ABSA e suas formulações.} As tarefas de ABSA foram consolidadas nas campanhas SemEval-2014 e 2016 \citep{pontiki2014semeval,pontiki2016semeval}, que também fixaram o F1 sobre pares (categoria, polaridade) como métrica usual da formulação por categoria. O levantamento de \citet{zhang2023survey} organiza as variantes, da extração de termos às quádruplas. Avaliações com opiniões conflitantes sobre aspectos diferentes são justamente as mais difíceis; o conjunto MAMS foi criado para avaliá-las separadamente \citep{jiang2019mams}.
+
+\paragraph{Sentimento em português.} Em avaliações brasileiras, a classificação binária de polaridade já alcança ROC-AUC acima de 0,96 com TF-IDF e regressão logística \citep{souza2021reviews}, o que desloca o interesse para análises mais granulares. Entre os encoders para o português destacam-se o BERTimbau \citep{souza2020bertimbau} e o Albertina \citep{rodrigues2023albertina}. O RePro \citep{silva2024repro} oferece 10.003 avaliações anotadas por humanos com tópicos e polaridade, com concordância entre anotadores (kappa) de 0,68 para tópicos e 0,71 para polaridade.
+
+\paragraph{LLMs como anotadores.} \citet{gilardi2023chatgpt} mostram LLMs superando anotadores de \emph{crowdsourcing} em várias tarefas, e \citet{wang2021labeling} discutem como combinar rótulos de LLM e humanos para reduzir custo. Em análise de sentimentos, \citet{zhang2024realitycheck} observam bom desempenho em tarefas simples e perdas em tarefas estruturadas como ABSA; \citet{simmering2023llmabsa} relatam que o ajuste fino supera o uso apenas por instruções. No próprio RePro, \citet{silva2024sabia} treinaram o BERTimbau com tópicos atribuídos pelo Sabiá-3 \citep{abonizio2024sabia3} e obtiveram F1 macro de 0,62, contra 0,68 com rótulos humanos, com a maior perda na categoria ``outros''. Este trabalho estende essa comparação para a polaridade por aspecto, controla a fonte do rótulo nos mesmos textos e acrescenta uma validação extrínseca em outra loja.
+
+\section{Dados}
+
+\paragraph{RePro (gabarito humano).} O corpus traz, para cada avaliação, os tópicos mencionados (produto, entrega, condições de recebimento, anúncio, outros e inadequada) e o conjunto de polaridades da avaliação inteira. Como a polaridade não é anotada por tópico, convertemos para o esquema por aspecto da seguinte forma: quando a avaliação tem uma única polaridade, ela vale para todos os tópicos marcados; quando a polaridade é mista, a atribuição por aspecto é indeterminada e a avaliação é descartada. A Tabela~\ref{tab:dados} resume o resultado. A divisão é estratificada pela nota e determinística. Nenhum texto do teste aparece, idêntico, no treino (comparação após normalizar caixa e espaços).
+
+\begin{table*}[htb]
+\centering
+\small
+\begin{tabular}{lr}
+\toprule
+\textbf{RePro} & \\
+Avaliações anotadas & 10.003 \\
+Descartadas: polaridade mista com um tópico & 1.042 \\
+Descartadas: polaridade mista com vários tópicos & 976 \\
+Usadas (treino / validação / teste) & 7.985 (5.589 / 799 / 1.597) \\
+\midrule
+\textbf{Olist} & \\
+Avaliações & 99.224 \\
+Comentários escritos (\texttt{review\_id} únicos) & 40.641 \\
+Comentários de pedidos entregues / atrasados & 38.796 / 3.747 \\
+Mediana de palavras por comentário & 9 \\
+\bottomrule
+\end{tabular}
+\caption{Volume dos dados. O RePro é o gabarito humano; a Olist é o domínio de aplicação.}
+\label{tab:dados}
+\end{table*}
+
+A distribuição dos rótulos no teste é desbalanceada (Tabela~\ref{tab:dist}): ``produto'' aparece em 75\% das avaliações, enquanto ``anúncio'' aparece em 8\%, e a classe ``neutro'' é rara, chegando a não existir em ``recebimento''.
+
+\begin{table}[htb]
+\centering
+\small
+\begin{tabular}{lrrrr}
+\toprule
+Aspecto & Ausente & Positivo & Negativo & Neutro \\
+\midrule
+Produto     &   395 & 807 & 369 & 26 \\
+Entrega     & 1.111 & 295 & 170 & 21 \\
+Recebimento & 1.345 &  64 & 188 &  0 \\
+Anúncio     & 1.468 &  25 &  96 &  8 \\
+Outros      & 1.192 &  81 & 273 & 51 \\
+\bottomrule
+\end{tabular}
+\caption{Rótulos por aspecto no teste do RePro ($n = 1.597$).}
+\label{tab:dist}
+\end{table}
+
+\paragraph{Olist (domínio de aplicação).} O \emph{Brazilian E-Commerce Public Dataset} \citep{olist2018} reúne pedidos de 2016 a 2018 em tabelas relacionais. Cruzamos cada comentário com o pedido, obtendo a data de entrega efetiva e a prometida, e definimos como atrasado o pedido entregue a partir do dia seguinte à data prometida. Entre os comentários de pedidos entregues, 73,0\% dos atrasados têm nota 1 ou 2, contra 18,4\% dos entregues no prazo. A nota indica que algo deu errado, mas só o texto diz o quê. A Olist não tem rótulos de aspecto; ela é usada para a validação extrínseca (H3).
+
+\section{Metodologia}
+
+\paragraph{Tarefa.} Classificação multirrótulo: para cada comentário e cada um dos cinco aspectos, uma entre quatro classes. Trata-se de aprendizado supervisionado; o que varia entre as condições experimentais é a origem dos rótulos de treino.
+
+\paragraph{Modelos.}
+\begin{itemize}
+  \item \textbf{Regras:} listas de raízes de palavras por aspecto e polaridade, como piso de referência.
+  \item \textbf{TF-IDF:} unigramas e bigramas sobre texto normalizado (minúsculas, sem acentos, \emph{stopwords} removidas preservando negações), com um classificador de quatro classes por aspecto: regressão logística com pesos de classe balanceados ou \emph{random forest}.
+  \item \textbf{BERTimbau Base} \citep{souza2020bertimbau}: o vetor do token \texttt{[CLS]} alimenta uma camada linear com uma saída \emph{softmax} de quatro classes por aspecto; a perda é a média das entropias cruzadas dos aspectos, com pesos de classe. Entrada: título e corpo do comentário, até 128 \emph{tokens}; taxa de aprendizado $3\times10^{-5}$, lotes de 32, quatro épocas e precisão mista em uma GPU T4 do Google Colab (cerca de 3 minutos por treino); a época é escolhida pelo F1 de pares em 599 avaliações da validação humana.
+  \item \textbf{LLM como anotador:} Qwen2.5-7B-Instruct, um modelo de pesos abertos, quantizado em 4 bits para caber na GPU gratuita do Colab. As instruções reproduzem as definições do guia de anotação do RePro e trazem seis exemplos fixos, tirados de 200 avaliações reservadas da validação; a decodificação é gulosa e a resposta deve ser um JSON com um dos quatro valores para cada aspecto. Respostas que não seguem o formato são descartadas do treino e contadas como erro na avaliação.
+\end{itemize}
+
+\paragraph{Humano × LLM (H2).} O LLM rotula os mesmos 5.589 textos do treino do RePro. O BERTimbau é treinado com rótulos humanos (H) e com rótulos do LLM (L), sempre com a mesma arquitetura, os mesmos hiperparâmetros e o mesmo teste humano. Nas duas condições, a época é escolhida nas mesmas 599 avaliações humanas da validação. Assim, a condição L usa rótulos humanos apenas para a seleção de modelo, nunca no ajuste dos pesos. Como controle, treinamos também um modelo apenas com essas 599 avaliações humanas, seguindo \citet{zhu2023weaker}: se ele superasse o modelo treinado com rótulos do LLM, os rótulos automáticos não estariam acrescentando nada. Reportamos a fração da diferença entre o controle e o modelo humano que é recuperada pelos rótulos do LLM.
+
+\paragraph{Avaliação.} A métrica principal é o F1 micro de pares (aspecto, polaridade) entre os aspectos mencionados, padrão da formulação por categoria \citep{pontiki2016semeval}. Como métricas secundárias usamos o F1 macro por aspecto, calculado com o conjunto de classes fixado pelo gabarito e sem a classe ``ausente'' (assim uma única predição espúria de uma classe que não existe no teste não altera a média), e o F1 de detecção (mencionado ou não). Intervalos de confiança de 95\% vêm de 1.000 reamostras \emph{bootstrap} das avaliações do teste. Os encoders são treinados com três sementes, e reportamos média e desvio padrão \citep{reimers2017reporting}. As comparações entre modelos usam \emph{bootstrap} pareado bilateral, com correção de Holm para a família de hipóteses \citep{dror2018hitchhiker,holm1979}.
+
+\paragraph{Validação extrínseca (H3).} Sobre os comentários de pedidos entregues da Olist, medimos a AUC entre a probabilidade prevista de ``entrega negativa'' e o atraso registrado. Como a nota em estrelas já se correlaciona com o atraso, a evidência relevante não é a AUC bruta, e sim: (i) o ganho sobre um modelo que usa apenas a nota; (ii) a AUC dentro de cada nota; e (iii) a comparação com um aspecto-placebo (``produto negativo''), que não deveria acompanhar o atraso.
+
+\paragraph{Reprodutibilidade.} Todo o código, os \emph{notebooks} para o Google Colab e as divisões determinísticas dos dados estão disponíveis publicamente.\footnote{\url{https://github.com/vnevesl/pln-absa-olist}}
+
+\section{Resultados}
+
+\paragraph{Linhas de base e BERTimbau (H1).} A Tabela~\ref{tab:resultados} traz os resultados no teste humano. Todos os modelos recebem o título seguido do corpo do comentário, como os anotadores do RePro viram; a linha ``sem o título'' mede o efeito dessa escolha. Para o BERTimbau, reportamos a média e o desvio padrão de três sementes e o IC da semente mediana.
+
+\begin{table*}[htb]
+\centering
+\small
+\begin{tabular}{lccc}
+\toprule
+Modelo & F1 de pares (IC 95\%) & F1 macro & F1 detecção \\
+\midrule
+Regras                         & 0,654 (0,636--0,672) & 0,326 & 0,610 \\
+TF-IDF + \emph{random forest}  & 0,815 (0,801--0,829) & 0,518 & 0,696 \\
+TF-IDF + regressão logística   & 0,867 (0,856--0,878) & 0,764 & 0,856 \\
+\quad sem o título (só o corpo) & 0,835 (0,822--0,847) & 0,700 & 0,828 \\
+\midrule
+BERTimbau, rótulos humanos (3 sementes) & \textbf{0,918} $\pm$ 0,002 (0,908--0,927) & \textbf{0,848} & \textbf{0,917} \\
+BERTimbau, só a validação humana (controle) & 0,779 (0,766--0,792) & 0,429 & 0,639 \\
+BERTimbau, rótulos do LLM (3 sementes)  & 0,794 $\pm$ 0,011 (0,779--0,802) & 0,594 & 0,750 \\
+\bottomrule
+\end{tabular}
+\caption{Resultados no teste humano do RePro ($n = 1.597$). IC de 95\% por \emph{bootstrap}.}
+\label{tab:resultados}
+\end{table*}
+
+O BERTimbau ajustado com os rótulos humanos é o melhor modelo em todas as métricas, com variação pequena entre sementes ($\pm$0,002). Em comparação pareada com a regressão logística, a diferença no F1 de pares é de +0,048 (IC 95\% de +0,038 a +0,059; $p < 0{,}001$ com correção de Holm), o que confirma a H1. O ganho é maior no F1 macro (de 0,764 para 0,848), que pesa as classes raras, e aparece em todos os aspectos (Tabela~\ref{tab:aspectos}), com os maiores avanços em ``recebimento'' e ``anúncio''. O controle treinado só com os 599 exemplos humanos da validação fica bem abaixo (0,779), o que indica que o volume de rótulos do treino importa para este problema. Entre as linhas de base, incluir o título aumenta o F1 de pares de 0,835 para 0,867: o título costuma resumir a opinião (``Produto errado'', ``Não recebi o produto'') e, nas avaliações mistas, traz justamente a parte que o corpo contradiz.
+
+\begin{table*}[htb]
+\centering
+\small
+\begin{tabular}{lcccc}
+\toprule
+ & \multicolumn{2}{c}{F1 de pares} & \multicolumn{2}{c}{F1 macro} \\
+Aspecto & BERTimbau & TF-IDF & BERTimbau & TF-IDF \\
+\midrule
+Produto     & 0,942 & 0,913 & 0,793 & 0,712 \\
+Entrega     & 0,955 & 0,918 & 0,895 & 0,834 \\
+Recebimento & 0,890 & 0,785 & 0,899 & 0,779 \\
+Anúncio     & 0,866 & 0,762 & 0,828 & 0,729 \\
+Outros      & 0,836 & 0,774 & 0,825 & 0,767 \\
+\bottomrule
+\end{tabular}
+\caption{Desempenho por aspecto no teste humano: BERTimbau (média de três sementes) e TF-IDF + regressão logística.}
+\label{tab:aspectos}
+\end{table*}
+
+\paragraph{Humano $\times$ LLM (H2).} A rotulagem dos 5.589 textos de treino levou cerca de 1,4 s por texto na T4 gratuita (pouco mais de duas horas), e só uma resposta veio fora do formato. Nas 599 avaliações humanas da validação, os rótulos do LLM atingem F1 de pares de 0,772 (IC 95\% de 0,753 a 0,791); no treino, 0,797. O BERTimbau treinado com esses rótulos chega a 0,794 $\pm$ 0,011 no teste (Tabela~\ref{tab:resultados}), nível próximo ao da concordância do próprio LLM com os humanos: o encoder reproduz os acertos e os erros sistemáticos de quem o rotulou. A diferença para o modelo com rótulos humanos é de +0,109 (IC 95\% de +0,097 a +0,121; $p < 0{,}001$ com Holm). O modelo L supera o controle treinado só com as 599 avaliações humanas (+0,027, IC 95\% de +0,013 a +0,040), mas recupera apenas 10,8\% da distância entre esse controle e o modelo humano, e fica abaixo da regressão logística treinada com rótulos humanos. A H2 não se confirma: com este LLM e este protocolo, 599 rótulos humanos valem quase tanto quanto 5.588 rótulos automáticos, em linha com \citet{zhu2023weaker}.
+
+As perdas se concentram nos aspectos menos concretos. Em pares, L perde pouco em ``produto'' (0,902 contra 0,942) e ``entrega'' (0,897 contra 0,955), mas cai em ``recebimento'' (0,693 contra 0,890), ``outros'' (0,600 contra 0,836) e sobretudo ``anúncio'' (0,545 contra 0,866). A comparação com o gabarito na validação mostra um padrão sistemático, e não ruído aleatório: o LLM marca ``anúncio'' em 123 avaliações onde os humanos marcaram 44, e ``outros'' em 281 contra 135, enquanto marca ``recebimento'' em 65 contra 102. Ou seja, o modelo interpreta qualquer divergência entre o esperado e o recebido como problema do anúncio, enquanto o guia do RePro a classifica como problema de recebimento, e usa ``outros'' como categoria residual. É a mesma fragilidade relatada por \citet{silva2024sabia} com o Sabiá-3 no RePro, aqui agravada pela polaridade por aspecto. O F1 macro de L (0,594) também mostra que as classes raras, como ``neutro'', quase não são aprendidas a partir desses rótulos.
+
+\paragraph{Validação com o atraso real (H3).} Os dois modelos, treinados apenas no RePro, foram aplicados à metade ``relato'' da Olist, que não foi usada em nenhuma decisão de modelagem: 19.239 comentários de pedidos entregues, dos quais 1.876 atrasados (Tabela~\ref{tab:atraso}).
+
+\begin{table*}[htb]
+\centering
+\small
+\begin{tabular}{lcc}
+\toprule
+Escore & BERTimbau & TF-IDF + RL \\
+\midrule
+Nota em estrelas (invertida)            & \multicolumn{2}{c}{0,821 (0,812--0,831)} \\
+Nota (regressão logística)              & \multicolumn{2}{c}{0,817} \\
+$P(\text{entrega negativa})$            & 0,830 (0,818--0,840) & 0,843 (0,833--0,853) \\
+Nota + $P(\text{entrega negativa})$     & 0,859 & 0,864 \\
+Placebo: $P(\text{produto negativo})$   & 0,461 (0,448--0,475) & -- \\
+\midrule
+\multicolumn{3}{l}{$P(\text{entrega negativa})$ dentro de cada nota} \\
+\quad 1 / 2 / 3 estrelas & 0,787 / 0,765 / 0,697 & 0,763 / 0,742 / 0,708 \\
+\quad 4 / 5 estrelas     & 0,659 / 0,539         & 0,709 / 0,633 \\
+\bottomrule
+\end{tabular}
+\caption{AUC para discriminar pedidos atrasados na Olist (metade ``relato''). IC de 95\% por \emph{bootstrap}; as combinações com a nota usam regressão logística com validação cruzada em 5 partes.}
+\label{tab:atraso}
+\end{table*}
+
+Os dois modelos discriminam pedidos atrasados e, combinados à nota, acrescentam informação que ela sozinha não contém (AUC de 0,817 para 0,859 com o BERTimbau e 0,864 com o TF-IDF). O sinal persiste dentro de cada nota, e o aspecto-placebo não acompanha o atraso: sua AUC fica abaixo de 0,5, o que é coerente com clientes de pedidos atrasados reclamarem da entrega, e não do produto. Esses resultados confirmam a H3. Há, porém, uma diferença instrutiva: o BERTimbau, claramente superior no teste do RePro, não supera o TF-IDF na Olist. Ele é melhor entre clientes muito insatisfeitos (1 e 2 estrelas), mas perde força entre os satisfeitos (4 e 5 estrelas), em que as queixas de entrega são mais sutis. Ganhos medidos no domínio de treino não se transferem automaticamente para outra loja, o que reforça o valor de uma validação extrínseca.
+
+\section{Discussão e limitações}
+
+\paragraph{Casos mistos fora do teste.} A conversão do RePro descarta 20\% das avaliações, e o descarte não é aleatório: atinge 37,5\% das avaliações de 3 estrelas e 31,0\% das de 2 estrelas, contra 6,3\% das de 1 estrela e 7,7\% das de 5 estrelas, e os textos descartados são mais longos (mediana de 27 palavras, contra 16). Os casos do tipo ``bom, mas atrasou'' são exatamente os que motivam a ABSA, então o teste tende a superestimar o desempenho nessa situação.
+
+\paragraph{Polaridade inferida.} Mesmo nas avaliações mantidas, a polaridade por aspecto é inferida da polaridade da avaliação inteira; 701 das 1.597 avaliações do teste têm mais de um aspecto e recebem a polaridade propagada.
+
+\paragraph{Mudança de domínio.} Os modelos são treinados na Americanas e aplicados na Olist, cujos comentários são mais curtos e mais concentrados em logística. A validação pelo atraso mede só o aspecto ``entrega''; os demais aspectos não têm verdade de campo equivalente na Olist. A adaptação por pré-treino continuado nos textos da Olist \citep{gururangan2020dont} fica como trabalho futuro.
+
+\paragraph{Uso de LLMs.} Rótulos de LLM podem refletir contaminação, já que os dois corpora são públicos, e sensibilidade ao texto das instruções. Por isso nenhuma métrica deste trabalho é calculada contra rótulos gerados por IA, e a anotação humana auxiliar, quando houver, é feita sem sugestões de modelo \citep{schroeder2025hitl}.
+
+\paragraph{Poder estatístico.} Com 1.597 exemplos de teste, diferenças de cerca de dois pontos de F1 entre modelos podem não ser detectáveis \citep{card2020power}; nesses casos reportamos a diferença como não detectada, e não como equivalência.
+
+\section{Conclusão}
+
+Este trabalho tratou a análise de sentimentos de avaliações de comércio eletrônico em português como classificação por categoria de aspecto, usando um gabarito humano publicado e uma verdade de campo independente na loja de aplicação. O BERTimbau ajustado com rótulos humanos alcança F1 de pares de 0,918 no teste do RePro, 4,8 pontos acima da melhor linha de base clássica, com ganhos em todos os aspectos (H1). Aplicadas a outra loja, as predições de ``entrega negativa'' acompanham o atraso registrado nos pedidos além do que a nota em estrelas já explica (H3); nesse cenário, porém, o modelo clássico se mostrou tão bom quanto o encoder, um lembrete de que o desempenho no domínio de treino não garante o desempenho no domínio de uso. Por fim, rótulos de um LLM aberto de 7 bilhões de parâmetros, obtidos sem custo, não substituíram a anotação humana (H2): o modelo treinado com eles recupera só 11\% do ganho do treino humano completo, com erros concentrados nas fronteiras entre ``anúncio'', ``recebimento'' e ``outros''. Para quem não tem anotação, algumas centenas de rótulos humanos parecem um investimento melhor que milhares de rótulos automáticos deste porte.
+
+Como trabalhos futuros, destacamos: repetir a H2 com LLMs maiores, com mais exemplos no \emph{prompt} e com regras explícitas para a fronteira entre ``anúncio'' e ``recebimento'', já que testamos um único modelo e um único \emph{prompt}; um conjunto de teste com avaliações de polaridade mista desambiguadas à mão, como no MAMS \citep{jiang2019mams}; uma perda de rótulo parcial que aproveite no treino as 2.018 avaliações hoje descartadas; a adaptação de domínio por pré-treino continuado nos textos da Olist \citep{gururangan2020dont}; e explicações locais com LIME \citep{ribeiro2016lime} para auditar em que palavras o modelo se apoia.
+
+\section*{Agradecimentos}
+
+Agradecemos aos autores do corpus RePro e à Olist por disponibilizarem publicamente os dados usados neste trabalho.
+
+\bibliography{references}
+
+\end{document}

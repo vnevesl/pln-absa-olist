@@ -32,6 +32,17 @@
   "f1_macro_media": 0.4288351147336297,
   "f1_deteccao_media": 0.6385671393603858
  },
+ "BERTimbau L": {
+  "sementes": 3,
+  "f1_pares_media": 0.7941803866979887,
+  "f1_pares_dp": 0.010757092315235563,
+  "ic_semente_mediana": [
+   0.7793076680047577,
+   0.8020866340727145
+  ],
+  "f1_macro_media": 0.594320008816359,
+  "f1_deteccao_media": 0.7497340811618342
+ },
  "comparacoes": {
   "BERTimbau H − TF-IDF": {
    "diferenca": 0.04824434039384251,
@@ -52,7 +63,33 @@
    "p_valor": 0.0,
    "ep": 0.006575961895575827,
    "p_holm": 0.0
+  },
+  "BERTimbau H − BERTimbau L": {
+   "diferenca": 0.1093423333100173,
+   "ic95": [
+    0.0971372633706408,
+    0.1213962205100827
+   ],
+   "p_valor": 0.0,
+   "ep": 0.0061077094917506665,
+   "p_holm": 0.0
   }
+ },
+ "h2": {
+  "f1_pares_valdev": 0.7723809523809524,
+  "ic_valdev": [
+   0.7526861336187127,
+   0.7905661183356109
+  ],
+  "f1_pares_treino": 0.7967800729040098,
+  "validos_treino": 5588,
+  "seg_por_texto": 1.3917725229502123,
+  "modelo": "Qwen/Qwen2.5-7B-Instruct",
+  "exemplos_prompt": 6,
+  "validos_valdev": 599,
+  "n_valdev": 599,
+  "n_treino": 5589,
+  "recuperacao_gap": 0.10758101157466796
  },
  "por_aspecto": {
   "pares_bert": {
@@ -86,6 +123,40 @@
    "anuncio": 0.729,
    "outros": 0.767,
    "MÉDIA": 0.764
+  }
+ },
+ "por_aspecto_L": {
+  "pares_H": {
+   "produto": 0.942,
+   "entrega": 0.955,
+   "recebimento": 0.89,
+   "anuncio": 0.866,
+   "outros": 0.836,
+   "MÉDIA": 0.898
+  },
+  "pares_L": {
+   "produto": 0.902,
+   "entrega": 0.897,
+   "recebimento": 0.693,
+   "anuncio": 0.545,
+   "outros": 0.6,
+   "MÉDIA": 0.728
+  },
+  "macro_H": {
+   "produto": 0.793,
+   "entrega": 0.895,
+   "recebimento": 0.899,
+   "anuncio": 0.828,
+   "outros": 0.825,
+   "MÉDIA": 0.848
+  },
+  "macro_L": {
+   "produto": 0.672,
+   "entrega": 0.6,
+   "recebimento": 0.688,
+   "anuncio": 0.415,
+   "outros": 0.598,
+   "MÉDIA": 0.594
   }
  },
  "h3": {

@@ -1,6 +1,7 @@
 """Tabelas do artigo a partir dos resultados do Colab (results/encoders/).
 
 H1: BERTimbau (3 sementes) × TF-IDF + regressão logística no teste humano do RePro.
+H2: BERTimbau com rótulos humanos (H) × rótulos do Qwen2.5-7B (L, results/h2/).
 H3: P(entrega negativa) × atraso real na metade "relato" da Olist.
 
 Uso: PYTHONPATH=src python scripts/resultados_bertimbau.py
@@ -22,6 +23,7 @@ from absa.preprocess import clean_classic
 from absa.repro import load_repro
 
 RES = ROOT / "results" / "encoders"
+RES_H2 = ROOT / "results" / "h2"
 treino, val, teste, _ = load_repro()
 
 
@@ -33,7 +35,7 @@ tfidf = TfidfAspectClassifier("logreg").fit(treino.texto_modelo.map(clean_classi
 pred_tfidf = tfidf.predict(teste.texto_modelo.map(clean_classic))
 modelos = {"TF-IDF + RL": [pred_tfidf]}
 for cond in ["H", "V", "L"]:
-    arqs = sorted(RES.glob(f"pred_teste_bertimbau_{cond}_s*.csv"))
+    arqs = sorted(RES.glob(f"pred_teste_bertimbau_{cond}_s*.csv")) or sorted(RES_H2.glob(f"pred_teste_bertimbau_{cond}_s*.csv"))
     if arqs:
         modelos[f"BERTimbau {cond}"] = [ler(a) for a in arqs]
 
@@ -57,11 +59,28 @@ h42 = ler(RES / "pred_teste_bertimbau_H_s42.csv")
 comparacoes = {"BERTimbau H − TF-IDF": paired_bootstrap(teste, h42, pred_tfidf)}
 if (RES / "pred_teste_bertimbau_V_s42.csv").exists():
     comparacoes["BERTimbau H − BERTimbau V"] = paired_bootstrap(teste, h42, ler(RES / "pred_teste_bertimbau_V_s42.csv"))
+if (RES_H2 / "pred_teste_bertimbau_L_s42.csv").exists():
+    comparacoes["BERTimbau H − BERTimbau L"] = paired_bootstrap(teste, h42, ler(RES_H2 / "pred_teste_bertimbau_L_s42.csv"))
 ajust = holm({k: v["p_valor"] for k, v in comparacoes.items()})
 for k, v in comparacoes.items():
     print(f"  {k:28s} Δ = {v['diferenca']:+.3f} (IC95% {v['ic95'][0]:+.3f} a {v['ic95'][1]:+.3f}) "
           f"p = {v['p_valor']:.4f}, p-Holm = {ajust[k]:.4f}")
 resumo["comparacoes"] = {k: {**v, "p_holm": ajust[k]} for k, v in comparacoes.items()}
+
+if "BERTimbau L" in resumo:
+    print("\nH2 — qualidade dos rótulos do LLM e recuperação do gap")
+    qual = json.loads((RES_H2 / "qualidade_rotulos_qwen7b.json").read_text())
+    valdev = pd.read_csv(RES_H2 / "repro_valdev_qwen7b.csv")
+    m = {c: resumo[f"BERTimbau {c}"]["f1_pares_media"] for c in "HLV"}
+    gap = (m["L"] - m["V"]) / (m["H"] - m["V"])
+    h2 = {**qual, "validos_valdev": int(valdev.valido.sum()), "n_valdev": len(valdev), "n_treino": len(treino),
+          "recuperacao_gap": gap}
+    print(f"  concordância LLM × humano: val_dev {qual['f1_pares_valdev']:.3f} "
+          f"(IC {qual['ic_valdev'][0]:.3f}–{qual['ic_valdev'][1]:.3f}), treino {qual['f1_pares_treino']:.3f}")
+    print(f"  respostas válidas: val_dev {h2['validos_valdev']}/{len(valdev)}, treino {qual['validos_treino']}/{len(treino)}"
+          f" | {qual['seg_por_texto']:.2f} s por texto na T4")
+    print(f"  recuperação do gap (L − V)/(H − V) = {gap:.1%}")
+    resumo["h2"] = h2
 
 print("\nPor aspecto — BERTimbau H (média das sementes) × TF-IDF")
 relatorios_h = [per_aspect_report(teste, p).set_index("aspecto") for p in modelos["BERTimbau H"]]
@@ -71,6 +90,14 @@ tabela = pd.DataFrame({"pares_bert": rep_h.f1_pares, "pares_tfidf": rep_t.f1_par
                        "macro_bert": rep_h.f1_macro, "macro_tfidf": rep_t.f1_macro}).round(3)
 print(tabela.to_string())
 resumo["por_aspecto"] = tabela.to_dict()
+if "BERTimbau L" in modelos:
+    rel_l = [per_aspect_report(teste, p).set_index("aspecto") for p in modelos["BERTimbau L"]]
+    rep_l = sum(rel_l) / len(rel_l)
+    tab_l = pd.DataFrame({"pares_H": rep_h.f1_pares, "pares_L": rep_l.f1_pares,
+                          "macro_H": rep_h.f1_macro, "macro_L": rep_l.f1_macro}).round(3)
+    print("\nPor aspecto — H × L (média das sementes)")
+    print(tab_l.to_string())
+    resumo["por_aspecto_L"] = tab_l.to_dict()
 
 print("\nH3 — Olist, metade 'relato' (BERTimbau H s42 treinado só no RePro)")
 olist = pd.read_csv(RES / "olist_relato_probs_bertimbau_H_s42.csv")

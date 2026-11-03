@@ -1,0 +1,12 @@
+{
+ "f1_pares_valdev": 0.7723809523809524,
+ "ic_valdev": [
+  0.7526861336187127,
+  0.7905661183356109
+ ],
+ "f1_pares_treino": 0.7967800729040098,
+ "validos_treino": 5588,
+ "seg_por_texto": 1.3917725229502123,
+ "modelo": "Qwen/Qwen2.5-7B-Instruct",
+ "exemplos_prompt": 6
+}
