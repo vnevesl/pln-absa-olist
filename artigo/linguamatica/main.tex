@@ -2,12 +2,12 @@
 
 % ORCID
 \usepackage{academicons}
-\usepackage{hyperref}
+\usepackage{amsmath}
 \usepackage{xcolor}
 \definecolor{orcidlogocolor}{HTML}{A6CE39}
 \newcommand{\meuorcid}[1]{\href{https://orcid.org/#1}{\textcolor{orcidlogocolor}{\aiOrcid}}}
 
-\usepackage[brazilian]{babel}
+\usepackage[portuguese]{babel}
 \usepackage{linguamatica}
 
 % Marca o que ainda depende de experimento. Antes da entrega, conferir que não sobrou nenhum.
@@ -103,6 +103,7 @@ A distribuição dos rótulos no teste é desbalanceada (Tabela~\ref{tab:dist}):
 \begin{table}[htb]
 \centering
 \small
+\setlength{\tabcolsep}{3.5pt}
 \begin{tabular}{lrrrr}
 \toprule
 Aspecto & Ausente & Positivo & Negativo & Neutro \\
