@@ -1,6 +1,6 @@
 # DESIGN E4 — Encoders: condições de rótulo, sementes e treino misto
 
-**Status: Pronto para execução** · aprovado em 30/10/2026 · roadmap: [`docs/ROADMAP.md`](../ROADMAP.md) §4 E4 · D4: 3 sementes
+**Status: Pronto para execução** · aprovado em 30/10/2026 · D4: 3 sementes
 
 ## Objetivo
 

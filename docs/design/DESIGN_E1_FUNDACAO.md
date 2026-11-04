@@ -1,6 +1,6 @@
 # DESIGN E1 — Fundação correta (métricas, entrada, taxonomia, vazamento, bugs do LLM)
 
-**Status: Pronto para execução** · aprovado em 30/10/2026 · roadmap: [`docs/ROADMAP.md`](../ROADMAP.md) §4 E1
+**Status: Pronto para execução** · aprovado em 30/10/2026
 
 ## Objetivo
 

@@ -1,6 +1,6 @@
 # DESIGN E2 — Ferramenta e lotes de anotação humana
 
-**Status: Pronto para execução** · aprovado em 30/10/2026 · roadmap: [`docs/ROADMAP.md`](../ROADMAP.md) §4 E2 · decisão D1 = enxuta
+**Status: Pronto para execução** · aprovado em 30/10/2026 · decisão D1 = enxuta
 
 ## Objetivo
 

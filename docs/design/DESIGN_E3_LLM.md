@@ -1,6 +1,6 @@
 # DESIGN E3 — LLM como anotador: backends, decodificação restrita e notebook de piloto
 
-**Status: Pronto para execução** · aprovado em 30/10/2026 · roadmap: [`docs/ROADMAP.md`](../ROADMAP.md) §4 E3 · decisões D2 (piloto escolhe) e D3 (Maritaca sim)
+**Status: Pronto para execução** · aprovado em 30/10/2026 · decisões D2 (piloto escolhe) e D3 (Maritaca sim)
 
 ## Objetivo
 

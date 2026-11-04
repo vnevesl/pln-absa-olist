@@ -26,9 +26,6 @@ __pycache__/
 # Sistema
 .DS_Store
 
-# Ralph
-.ralph/
-scripts/ralph/node_modules/
 
 # Pacote gerado para o Overleaf
 artigo/artigo_overleaf.zip
