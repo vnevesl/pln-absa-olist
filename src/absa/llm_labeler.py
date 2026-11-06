@@ -22,13 +22,24 @@ from .config import ASPECT_GUIDE, ASPECTS, LLM_CACHE, POLARITIES, SEED
 
 PROMPT_VERSION = "v2"  # mude ao alterar o texto do prompt: invalida o cache automaticamente
 
+# v3: regras de desempate escritas depois da análise de erros do v2 na validação
+# (o LLM marcava "outros" e "anúncio" demais e "recebimento" de menos).
+REGRAS_V3 = (
+    "Regras de desempate:\n"
+    "- Marque apenas os aspectos que o cliente realmente comenta; na dúvida, use \"ausente\".\n"
+    "- Elogios ou críticas gerais (\"recomendo\", \"gostei\", \"ótimo\") são sobre o produto, não \"outros\".\n"
+    "- Use \"outros\" só para os assuntos listados em \"outros\" acima, nunca como complemento de outro aspecto.\n"
+    "- Item errado, trocado, incompleto, faltando peça ou avariado na chegada é \"recebimento\", não \"anuncio\".\n"
+    "- \"anuncio\" só quando o cliente compara o produto com a descrição, as fotos ou as especificações da página.\n"
+)
+
 SYSTEM = (
     "Você é um anotador de avaliações de compras online em português. "
     "Para cada aspecto, diga se o cliente fala dele e qual é a opinião do cliente sobre ele."
 )
 
 
-def build_prompt(text: str, examples: list[dict] | None = None) -> str:
+def build_prompt(text: str, examples: list[dict] | None = None, version: str = PROMPT_VERSION) -> str:
     aspectos = "\n".join(f'- "{a}": {d}' for a, d in ASPECT_GUIDE.items())
     valores = ", ".join(f'"{p}"' for p in POLARITIES)
     partes = [
@@ -42,6 +53,8 @@ def build_prompt(text: str, examples: list[dict] | None = None) -> str:
         'Se o texto fala da compra mas não de produto, entrega, recebimento ou anúncio, use "outros".\n',
         "Responda apenas com um JSON com exatamente estas chaves: " + ", ".join(ASPECTS) + ".\n",
     ]
+    if version == "v3":
+        partes.insert(2, REGRAS_V3)
     for ex in examples or []:
         rotulo = json.dumps({a: ex[a] for a in ASPECTS}, ensure_ascii=False)
         partes.append(f"Comentário: {ex['texto']}\nJSON: {rotulo}\n")
@@ -106,32 +119,33 @@ class JsonlCache:
             f.write(json.dumps({"key": key, "raw": raw, **meta}, ensure_ascii=False) + "\n")
 
 
-def cache_key(prompt: str, model_id: str) -> str:
-    return hashlib.sha1(f"{model_id}|{PROMPT_VERSION}|{prompt}".encode()).hexdigest()
+def cache_key(prompt: str, model_id: str, version: str = PROMPT_VERSION) -> str:
+    return hashlib.sha1(f"{model_id}|{version}|{prompt}".encode()).hexdigest()
 
 
-def label_texts(texts, generate, model_id: str, examples=None, cache_name="llm", batch_size=16, progress=True):
+def label_texts(texts, generate, model_id: str, examples=None, cache_name="llm", batch_size=16, progress=True,
+                version=PROMPT_VERSION):
     """Rotula uma lista de textos.
 
     Devolve (rótulos, respostas_brutas). Rótulo None = resposta inválida: quem chama
     deve DESCARTAR a linha (nunca tratá-la como "ausente").
     """
     cache = JsonlCache(cache_name)
-    prompts = [build_prompt(t, examples) for t in texts]
-    pendentes = [p for p in dict.fromkeys(prompts) if cache.get(cache_key(p, model_id)) is None]
+    prompts = [build_prompt(t, examples, version) for t in texts]
+    pendentes = [p for p in dict.fromkeys(prompts) if cache.get(cache_key(p, model_id, version)) is None]
     pendentes.sort(key=len)  # lotes com textos de tamanho parecido: menos padding, geração mais rápida
     t0 = time.time()
     for i in range(0, len(pendentes), batch_size):
         lote = pendentes[i:i + batch_size]
         for prompt, raw in zip(lote, generate(lote), strict=True):
-            cache.put(cache_key(prompt, model_id), raw, model=model_id, prompt_version=PROMPT_VERSION)
+            cache.put(cache_key(prompt, model_id, version), raw, model=model_id, prompt_version=version)
         if progress:
             feitos = min(i + batch_size, len(pendentes))
             resta = (time.time() - t0) / feitos * (len(pendentes) - feitos)
             print(f"\r{feitos}/{len(pendentes)} rotulados · faltam ~{resta / 60:.0f} min", end="", flush=True)
     if progress and pendentes:
         print()
-    raws = [cache.get(cache_key(p, model_id)) for p in prompts]
+    raws = [cache.get(cache_key(p, model_id, version)) for p in prompts]
     return [parse_response(r) for r in raws], raws
 
 

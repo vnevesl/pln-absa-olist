@@ -137,3 +137,11 @@ def test_gold_exclusion_and_split():
     s1 = olist_split(df)
     s2 = olist_split(df.iloc[::-1]).loc[df.index]
     assert (s1 == s2).all() and set(s1) <= {"dev", "relato"}
+
+
+def test_prompt_v3_adds_rules_and_changes_cache_key():
+    from absa.llm_labeler import cache_key
+    v2, v3 = build_prompt("veio a cor errada"), build_prompt("veio a cor errada", version="v3")
+    assert "Regras de desempate" in v3 and "Regras de desempate" not in v2
+    assert v3.rstrip().endswith("JSON:")
+    assert cache_key(v2, "qwen") != cache_key(v3, "qwen", "v3")
