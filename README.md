@@ -73,7 +73,9 @@ src/absa/                     pacote Python usado pelos notebooks
   models/baseline.py          TF-IDF + Regressão Logística / Random Forest
   models/encoder.py           BERTimbau / Albertina com uma cabeça por aspecto
 notebooks/                    roteiro de execução (Colab, GPU T4 gratuita)
+  apresentacao.ipynb          apresentação dos resultados: dados, tabelas e gráficos de H1, H2 e H3 (CPU, ~4 min)
   experimentos.ipynb          H1, H2 e H3 num único notebook (BERTimbau, Qwen2.5-7B e validação na Olist)
+  h2_prompt_v3.ipynb          H2 com o prompt revisado (v3)
 artigo/                       artigo em LaTeX (Overleaf) e referências
 results/                      predições e resumos gerados pelos notebooks (base das tabelas do artigo)
 anotacao/guia_de_anotacao.md  definição dos aspectos e conversão do RePro
