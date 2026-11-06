@@ -3,6 +3,7 @@
 % ORCID
 \usepackage{academicons}
 \usepackage{amsmath}
+\usepackage{array}
 \usepackage{pgfplots}
 \pgfplotsset{compat=1.18}
 \usepackage{xcolor}
@@ -196,7 +197,8 @@ As perdas se concentram nos aspectos menos concretos. Em pares, L perde pouco em
 \begin{table}[htb]
 \centering
 \footnotesize
-\begin{tabular}{p{0.46\columnwidth}p{0.19\columnwidth}p{0.19\columnwidth}}
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{>{\raggedright\arraybackslash}p{0.40\columnwidth}>{\raggedright\arraybackslash}p{0.255\columnwidth}>{\raggedright\arraybackslash}p{0.255\columnwidth}}
 \toprule
 Comentário (validação do RePro) & Humano & LLM \\
 \midrule
