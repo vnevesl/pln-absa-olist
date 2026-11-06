@@ -1,0 +1,12 @@
+{
+ "versao": "v3",
+ "f1_pares_valdev": 0.7803921568627451,
+ "ic_valdev": [
+  0.7603215147161126,
+  0.800004995004995
+ ],
+ "aspectos_por_avaliacao_valdev": 1.8614357262103507,
+ "f1_pares_treino": 0.8043568897227433,
+ "validos_valdev": 599,
+ "validos_treino": 5585
+}
