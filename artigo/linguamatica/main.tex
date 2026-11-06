@@ -3,6 +3,8 @@
 % ORCID
 \usepackage{academicons}
 \usepackage{amsmath}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18}
 \usepackage{xcolor}
 \definecolor{orcidlogocolor}{HTML}{A6CE39}
 \newcommand{\meuorcid}[1]{\href{https://orcid.org/#1}{\textcolor{orcidlogocolor}{\aiOrcid}}}
@@ -189,7 +191,24 @@ Outros      & 0,836 & 0,774 & 0,825 & 0,767 \\
 
 \paragraph{Humano $\times$ LLM (H2).} A rotulagem dos 5.589 textos de treino levou cerca de 1,4 s por texto na T4 gratuita (pouco mais de duas horas), e só uma resposta veio fora do formato. Nas 599 avaliações humanas da validação, os rótulos do LLM atingem F1 de pares de 0,772 (IC 95\% de 0,753 a 0,791); no treino, 0,797. O BERTimbau treinado com esses rótulos chega a 0,794 $\pm$ 0,011 no teste (Tabela~\ref{tab:resultados}), nível próximo ao da concordância do próprio LLM com os humanos: o encoder reproduz os acertos e os erros sistemáticos de quem o rotulou. A diferença para o modelo com rótulos humanos é de +0,109 (IC 95\% de +0,097 a +0,121; $p < 0{,}001$ com Holm). O modelo L supera o controle treinado só com as 599 avaliações humanas (+0,027, IC 95\% de +0,013 a +0,040), mas recupera apenas 10,8\% da distância entre esse controle e o modelo humano, e fica abaixo da regressão logística treinada com rótulos humanos. A H2 não se confirma: com este LLM e este protocolo, 599 rótulos humanos valem quase tanto quanto 5.588 rótulos automáticos, em linha com \citet{zhu2023weaker}.
 
-As perdas se concentram nos aspectos menos concretos. Em pares, L perde pouco em ``produto'' (0,902 contra 0,942) e ``entrega'' (0,897 contra 0,955), mas cai em ``recebimento'' (0,693 contra 0,890), ``outros'' (0,600 contra 0,836) e sobretudo ``anúncio'' (0,545 contra 0,866). A comparação com o gabarito na validação mostra um padrão sistemático, e não ruído aleatório: o LLM marca ``anúncio'' em 123 avaliações onde os humanos marcaram 44, e ``outros'' em 281 contra 135, enquanto marca ``recebimento'' em 65 contra 102. Ou seja, o modelo interpreta qualquer divergência entre o esperado e o recebido como problema do anúncio, enquanto o guia do RePro a classifica como problema de recebimento, e usa ``outros'' como categoria residual. É a mesma fragilidade relatada por \citet{silva2024sabia} com o Sabiá-3 no RePro, aqui agravada pela polaridade por aspecto. O F1 macro de L (0,594) também mostra que as classes raras, como ``neutro'', quase não são aprendidas a partir desses rótulos.
+As perdas se concentram nos aspectos menos concretos. Em pares, L perde pouco em ``produto'' (0,902 contra 0,942) e ``entrega'' (0,897 contra 0,955), mas cai em ``recebimento'' (0,693 contra 0,890), ``outros'' (0,600 contra 0,836) e sobretudo ``anúncio'' (0,545 contra 0,866). A comparação com o gabarito na validação mostra um padrão sistemático, e não ruído aleatório: o LLM marca aspectos demais (1,96 por avaliação, contra 1,54 dos humanos). Ele acrescenta ``anúncio'' a 80 avaliações em que os humanos não o marcaram, deixando de marcá-lo em apenas uma, e acrescenta ``outros'' a 167, em geral junto a elogios genéricos como ``recomendo''. Em ``recebimento'' ocorre o inverso: o LLM deixa de marcá-lo em 51 avaliações, e quando o cliente recebe um item errado ou incompleto tende a atribuir o problema ao anúncio, enquanto o guia do RePro o classifica como problema de recebimento (Tabela~\ref{tab:erros}). É a mesma fragilidade relatada por \citet{silva2024sabia} com o Sabiá-3 no RePro, aqui agravada pela polaridade por aspecto. O F1 macro de L (0,594) também mostra que as classes raras, como ``neutro'', quase não são aprendidas a partir desses rótulos.
+
+\begin{table}[htb]
+\centering
+\footnotesize
+\begin{tabular}{p{0.46\columnwidth}p{0.19\columnwidth}p{0.19\columnwidth}}
+\toprule
+Comentário (validação do RePro) & Humano & LLM \\
+\midrule
+``Cor errada. Comprei um iphone 8 dourado e recebi o rosa.'' & recebimento$-$ & produto$-$, recebimento$-$, anúncio$-$ \\
+``incompleto. Não indico, pq falta piso do carrinho [\dots]'' & produto$-$, recebimento$-$ & produto$-$, anúncio$-$ \\
+``Recomendo. Produto de boa qualidade. e atende bem o que promete.'' & produto$+$ & produto$+$, outros$+$ \\
+``Não recebi meu produto! [\dots] Entrega atrasadissima!!'' & entrega$-$ & entrega$-$, outros$-$ \\
+\bottomrule
+\end{tabular}
+\caption{Exemplos de divergência entre o gabarito humano e os rótulos do LLM ($+$ positivo, $-$ negativo). Textos transcritos sem correção.}
+\label{tab:erros}
+\end{table}
 
 \paragraph{Validação com o atraso real (H3).} Os dois modelos, treinados apenas no RePro, foram aplicados à metade ``relato'' da Olist, que não foi usada em nenhuma decisão de modelagem: 19.239 comentários de pedidos entregues, dos quais 1.876 atrasados (Tabela~\ref{tab:atraso}).
 
@@ -215,7 +234,29 @@ Placebo: $P(\text{produto negativo})$   & 0,461 (0,448--0,475) & -- \\
 \label{tab:atraso}
 \end{table*}
 
-Os dois modelos discriminam pedidos atrasados e, combinados à nota, acrescentam informação que ela sozinha não contém (AUC de 0,817 para 0,859 com o BERTimbau e 0,864 com o TF-IDF). O sinal persiste dentro de cada nota, e o aspecto-placebo não acompanha o atraso: sua AUC fica abaixo de 0,5, o que é coerente com clientes de pedidos atrasados reclamarem da entrega, e não do produto. Esses resultados confirmam a H3. Há, porém, uma diferença instrutiva: o BERTimbau, claramente superior no teste do RePro, não supera o TF-IDF na Olist. Ele é melhor entre clientes muito insatisfeitos (1 e 2 estrelas), mas perde força entre os satisfeitos (4 e 5 estrelas), em que as queixas de entrega são mais sutis. Ganhos medidos no domínio de treino não se transferem automaticamente para outra loja, o que reforça o valor de uma validação extrínseca.
+Os dois modelos discriminam pedidos atrasados e, combinados à nota, acrescentam informação que ela sozinha não contém (AUC de 0,817 para 0,859 com o BERTimbau e 0,864 com o TF-IDF). O sinal persiste dentro de cada nota (Figura~\ref{fig:pornota}), e o aspecto-placebo não acompanha o atraso: sua AUC fica abaixo de 0,5, o que é coerente com clientes de pedidos atrasados reclamarem da entrega, e não do produto. Esses resultados confirmam a H3. Há, porém, uma diferença instrutiva: o BERTimbau, claramente superior no teste do RePro, não supera o TF-IDF na Olist. Ele é melhor entre clientes muito insatisfeitos (1 e 2 estrelas), mas perde força entre os satisfeitos (4 e 5 estrelas), em que as queixas de entrega são mais sutis. Ganhos medidos no domínio de treino não se transferem automaticamente para outra loja, o que reforça o valor de uma validação extrínseca.
+
+\begin{figure}[htb]
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+  ybar, bar width=7pt, width=\columnwidth, height=5.2cm,
+  ymin=0.45, ymax=0.85, ytick={0.5,0.6,0.7,0.8},
+  yticklabel style={/pgf/number format/use comma, /pgf/number format/fixed, /pgf/number format/precision=1},
+  symbolic x coords={1,2,3,4,5}, xtick=data,
+  xlabel={Nota em estrelas}, ylabel={AUC},
+  legend style={at={(0.97,0.97)}, anchor=north east, font=\footnotesize, draw=none},
+  tick label style={font=\footnotesize}, label style={font=\footnotesize},
+  extra y ticks={0.5}, extra y tick labels={}, extra y tick style={grid=major, grid style={dashed, gray}},
+]
+\addplot[fill=black!70, draw=none] coordinates {(1,0.787) (2,0.765) (3,0.697) (4,0.659) (5,0.539)};
+\addplot[fill=black!25, draw=none] coordinates {(1,0.763) (2,0.742) (3,0.708) (4,0.709) (5,0.633)};
+\legend{BERTimbau, TF-IDF + RL}
+\end{axis}
+\end{tikzpicture}
+\caption{AUC de $P(\text{entrega negativa})$ para detectar atraso dentro de cada nota, na Olist. A linha tracejada marca o acaso (0,5).}
+\label{fig:pornota}
+\end{figure}
 
 \section{Discussão e limitações}
 
