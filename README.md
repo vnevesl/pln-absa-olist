@@ -40,9 +40,11 @@ Métrica principal: F1 de pares (aspecto, polaridade). Entrada dos modelos: tít
 | **BERTimbau, rótulos humanos (3 sementes)** | **0,918 ± 0,002** (0,908–0,927) | **0,848** |
 | BERTimbau, só a validação humana (controle) | 0,779 (0,766–0,792) | 0,429 |
 | BERTimbau, rótulos do Qwen2.5-7B (3 sementes) | 0,794 ± 0,011 (0,779–0,802) | 0,594 |
+| BERTimbau, rótulos do Qwen com prompt revisado (v3) | 0,805 ± 0,002 (0,795–0,817) | 0,621 |
 
 H2: os rótulos do Qwen concordam com os humanos em F1 de pares 0,772 (validação), e o BERTimbau treinado com eles
 recupera só 10,8% da distância entre o controle de 599 rótulos humanos e o modelo humano completo — a H2 não se confirma.
+O prompt revisado (`notebooks/h2_prompt_v3.ipynb`) sobe essa fração para 18%, sem diferença significativa.
 
 Na Olist (metade "relato", 19.239 pedidos entregues), a probabilidade prevista de "entrega negativa" acrescenta
 informação à nota para detectar atraso real: AUC de 0,817 (só a nota) para 0,859 (nota + BERTimbau).
